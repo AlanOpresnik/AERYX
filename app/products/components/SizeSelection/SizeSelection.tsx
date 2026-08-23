@@ -9,7 +9,7 @@ interface Props {
 
 export default function SizeSelection({ sizes, selectedSize, setSelectedSize }: Props) {
   return (
-    <fieldset className="mt-8">
+    <fieldset className="mt-2">
       <legend className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em]">
         Elegí tu medida
       </legend>

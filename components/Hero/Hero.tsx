@@ -61,10 +61,16 @@ export function Hero() {
         <Image
           src="/banner/Banner.png"
           alt="Banner de Aeryx"
-          width={1220}
+          width={1000}
           height={1220}
           priority
-          className="object-contain"
+          sizes="(1024px) 30vw, (1280px) 35vw, 40vw"
+          className="
+      h-auto
+      w-[700px]
+      xl:w-[800px]
+      2xl:w-[1000px]
+    "
         />
       </div>
 

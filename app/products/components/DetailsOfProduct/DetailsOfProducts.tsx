@@ -1,7 +1,13 @@
+import { Product } from "@/lib/interface/ProductInterface";
 import Image from "next/image";
 import React from "react";
 
-export default function DetailsOfProducts() {
+interface Props {
+  product: Product
+}
+
+export default function DetailsOfProducts({product}: Props) {
+  console.log(product)
   return (
     <section
       id="tecnologia"
@@ -9,7 +15,7 @@ export default function DetailsOfProducts() {
     >
       <div className="relative min-h-[32rem] lg:min-h-[48rem]">
         <Image
-          src="https://down-br.img.susercontent.com/file/br-11134207-81z1k-mhkoehlpvaiu8a"
+          src={product.publicity_image}
           alt="Textura de precisión del Control 01"
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"

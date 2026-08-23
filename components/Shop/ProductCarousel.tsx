@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Product } from "@/lib/products-mock-data";
 import ProductCard from "./ProductCard/ProductCard";
+import { Product } from "@/lib/interface/ProductInterface";
 
 interface ProductCarouselProps {
   products: Product[];
@@ -27,7 +27,9 @@ export default function ProductCarousel({ products }: ProductCarouselProps) {
     onSelect();
 
     emblaApi.on("select", onSelect);
-    return () => emblaApi.off("select", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
   }, [emblaApi]);
 
   return (

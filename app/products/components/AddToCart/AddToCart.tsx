@@ -4,16 +4,26 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Check, ShoppingBag } from "lucide-react";
 
 interface AddToCartProps {
+  productId: string;
   quantity: number;
   setQuantity: (value: React.SetStateAction<number>) => void;
   added: boolean;
   addToCart: () => void;
 }
 
-export default function AddToCart({ quantity, setQuantity, added, addToCart }: AddToCartProps) {
+export default function AddToCart({
+  productId,
+  quantity,
+  setQuantity,
+  added,
+  addToCart,
+}: AddToCartProps) {
   return (
     <div className="mt-5 flex gap-2">
-      <Quantity quantity={quantity} setQuantity={setQuantity} />
+      <Quantity
+        quantity={quantity}
+        setQuantity={setQuantity}
+      />
 
       <Button
         onClick={addToCart}

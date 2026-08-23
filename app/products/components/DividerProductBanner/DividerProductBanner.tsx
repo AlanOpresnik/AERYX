@@ -1,18 +1,21 @@
 import { Mark } from "@/components/ui/Mark";
+import { Product } from "@/lib/interface/ProductInterface";
 import { Check } from "lucide-react";
 import Image from "next/image";
 import React from "react";
-
-export default function DividerProductBanner() {
+interface Props {
+  product: Product;
+}
+export default function DividerProductBanner({ product }: Props) {
   return (
     <section className="grid border-y border-border lg:grid-cols-[1.1fr_.9fr]">
       <div className="relative min-h-[34rem] border-b border-border lg:min-h-[46rem] lg:border-b-0 lg:border-r">
         <Image
-          src="/aeryx-pad-desk.png"
+          src="https://res.cloudinary.com/cuqpvs4s/image/upload/v1785794404/Gemini_Generated_Image_xnqffuxnqffuxnqf_wbozvk.png"
           alt="Setup competitivo con Control 01"
           fill
           sizes="(max-width: 1024px) 100vw, 55vw"
-          className="object-cover"
+          className=""
         />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-foreground/85 p-5 text-background backdrop-blur-sm md:p-8">
           <p className="max-w-sm text-2xl font-semibold leading-tight tracking-tight">
@@ -31,11 +34,7 @@ export default function DividerProductBanner() {
           Solo juego.
         </h2>
         <ul className="mt-12 flex flex-col border-t border-border">
-          {[
-            "Diseño probado en juego",
-            "Materiales de alto rendimiento",
-            "Dos años de garantía",
-          ].map((item) => (
+          {product.features.map((item) => (
             <li
               className="flex items-center gap-3 border-b border-border py-5 text-sm"
               key={item}

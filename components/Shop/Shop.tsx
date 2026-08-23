@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { mono, pagePad, products } from "@/lib/products-mock-data";
-import ProductCarousel from "./ProductCarousel";
+import { mono, pagePad } from "@/lib/products-mock-data";
+import ProductCarouselWrapper from "./ProductCarouselWrapper";
 
 function ProductCarouselSkeleton() {
   return (
@@ -58,7 +58,7 @@ export function Shop() {
       </div>
       <div className="mt-6 overflow-visible">
         <Suspense fallback={<ProductCarouselSkeleton />}>
-          <ProductCarousel products={products} />
+          <ProductCarouselWrapper />
         </Suspense>
       </div>
     </section>

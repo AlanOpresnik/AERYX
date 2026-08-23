@@ -1,6 +1,11 @@
+import { Product } from "@/lib/interface/ProductInterface";
 import React from "react";
 
-export default function SpecsDetails() {
+interface Props {
+  product: Product;
+}
+
+export default function SpecsDetails({ product }: Props) {
   return (
     <section
       id="especificaciones"
@@ -16,14 +21,7 @@ export default function SpecsDetails() {
           </h2>
         </div>
         <dl className="border-t border-border">
-          {[
-            ["Superficie", "Poliéster microtejido tratado"],
-            ["Base", "PORON 2.0 de caucho natural"],
-            ["Espesor", "4 mm de densidad uniforme"],
-            ["Bordes", "Costura plana anti-fray"],
-            ["Compatibilidad", "Sensores ópticos y láser"],
-            ["Cuidado", "Lavado manual con agua fría"],
-          ].map(([term, detail]) => (
+          {Object.entries(product.specs ?? {}).map(([term, detail]) => (
             <div
               key={term}
               className="grid grid-cols-[.7fr_1.3fr] gap-6 border-b border-border py-6"

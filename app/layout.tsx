@@ -3,6 +3,10 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/Footer/Footer";
+import { ViewTransition } from "react";
+import { Header } from "@/components/Header/Header";
+import { CartProvider } from "./context/cartContext";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({
@@ -32,8 +36,14 @@ export default function RootLayout({
       <body
         className={`${geist.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {children}
-        <Footer />
+        <ViewTransition>
+          <CartProvider>
+            <ClerkProvider>
+              <Header />
+              {children}
+            </ClerkProvider>
+          </CartProvider>
+        </ViewTransition>
       </body>
     </html>
   );
