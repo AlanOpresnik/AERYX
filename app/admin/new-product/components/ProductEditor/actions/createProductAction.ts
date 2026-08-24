@@ -2,12 +2,11 @@
 
 "use server";
 
-import { api, type Product } from "@/lib/api/api";
+import { api } from "@/lib/api/api";
+import { Product } from "@/lib/interface/ProductInterface";
 import { revalidatePath } from "next/cache";
 
-export async function createProductAction(
-  product: Partial<Product>
-) {
+export async function createProductAction(product: Product) {
   const createdProduct = await api.products.create(product);
 
   if (!createdProduct) {

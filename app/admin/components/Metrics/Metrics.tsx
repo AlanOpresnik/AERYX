@@ -93,7 +93,7 @@ export default function Metrics() {
 
       <MetricCard
         title="Ordenes totales"
-        value={loading ? "..." : Number(metrics.totalOrders)}
+        value={loading ? "..." : formatNumber(metrics.totalOrders)}
         change=""
         icon={Boxes}
       />

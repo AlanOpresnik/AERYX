@@ -20,16 +20,28 @@ const STATUS_META: Record<
     tone: "amber" | "emerald" | "neutral";
   }
 > = {
-  revision: {
+  Pendiente: {
     label: "En revisión",
     tone: "amber",
   },
-  shipped: {
+  Pagado: {
+    label: "Pagado",
+    tone: "emerald",
+  },
+  "En camino": {
     label: "Enviado",
     tone: "emerald",
   },
-  delivered: {
+  Entregado: {
     label: "Entregado",
+    tone: "neutral",
+  },
+  Cancelado: {
+    label: "Cancelado",
+    tone: "neutral",
+  },
+  Reembolsado: {
+    label: "Reembolsado",
     tone: "neutral",
   },
 };
@@ -72,7 +84,7 @@ export function OrderCard({
           </p>
         </div>
 
-        {order.status !== "revision" && (
+        {order.status !== "Pendiente" && (
           <button
             type="button"
             className="text-xs font-medium text-neutral-500 border border-neutral-200 rounded-full px-3 py-1.5 hover:border-emerald-600 hover:text-emerald-700 transition-colors"

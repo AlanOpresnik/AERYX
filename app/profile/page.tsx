@@ -13,7 +13,7 @@ import { UserDataInterface } from "@/lib/interface/User";
 const orders: Order[] = [
   {
     id: "123",
-    status: "revision",
+    status: "Pendiente",
     method: "Transferencia bancaria",
     amount: "$125.000",
     date: "20 Ago 2026",
@@ -135,11 +135,11 @@ export default function Perfil() {
   const filteredOrders = orders.filter((order) => {
     if (filter === "todos") return true;
 
-    if (filter === "revision") {
-      return order.status === "revision";
+    if (filter === "Pendiente") {
+      return order.status === "Pendiente";
     }
 
-    return order.status !== "revision";
+    return order.status !== "Pendiente";
   });
 
   return (
@@ -226,7 +226,7 @@ export default function Perfil() {
               <OrderCard
                 key={order.id}
                 order={order}
-                cardRef={order.status === "revision" ? pendingRef : undefined}
+                cardRef={order.status === "Pendiente" ? pendingRef : undefined}
               />
             ))}
           </section>

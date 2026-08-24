@@ -50,8 +50,6 @@ const STEPS: { id: CheckoutStep; label: string }[] = [
   { id: "pago", label: "Compra" },
 ];
 
-
-
 export default function Checkout({ onBack }: CheckoutProps) {
   const {
     cart,
@@ -90,7 +88,9 @@ export default function Checkout({ onBack }: CheckoutProps) {
     approximate: false,
   });
 
-  const [shippingOptions, setShippingOptions] = useState<ShippingOptionType[]>([]);
+  const [shippingOptions, setShippingOptions] = useState<ShippingOptionType[]>(
+    [],
+  );
   const [shippingLoading, setShippingLoading] = useState(false);
   const [shippingMethod, setShippingMethod] = useState<string | null>(null);
   const [addressValidated, setAddressValidated] = useState(false);
@@ -254,7 +254,7 @@ export default function Checkout({ onBack }: CheckoutProps) {
 
   const shippingCost = shippingManual
     ? 0
-    : selectedShippingOption?.price ?? 0;
+    : (selectedShippingOption?.price ?? 0);
 
   const total = subtotal + shippingCost;
 
@@ -292,7 +292,10 @@ export default function Checkout({ onBack }: CheckoutProps) {
           province: formData.province,
           latitude: formData.latitude,
           longitude: formData.longitude,
-          placeId: formData.placeId,
+          placeId:
+            formData.placeId !== null && formData.placeId !== undefined
+              ? String(formData.placeId)
+              : null,
           approximate: formData.approximate,
         },
         shipping: {
@@ -376,7 +379,8 @@ export default function Checkout({ onBack }: CheckoutProps) {
         <div className="mb-10 flex items-start justify-between border-b border-black/60 pb-3">
           <p className="eyebrow">Finalizar compra</p>
           <p className="eyebrow hidden sm:block">
-            Carrito / {items.length} {items.length === 1 ? "artículo" : "artículos"}
+            Carrito / {items.length}{" "}
+            {items.length === 1 ? "artículo" : "artículos"}
           </p>
         </div>
 
@@ -455,11 +459,13 @@ export default function Checkout({ onBack }: CheckoutProps) {
                     </p>
                   )}
 
-                  {addressValidated && !shippingManual && shippingOptions.length > 0 && (
-                    <p className="mt-2 text-xs text-black/45">
-                      Dirección validada correctamente.
-                    </p>
-                  )}
+                  {addressValidated &&
+                    !shippingManual &&
+                    shippingOptions.length > 0 && (
+                      <p className="mt-2 text-xs text-black/45">
+                        Dirección validada correctamente.
+                      </p>
+                    )}
                 </div>
 
                 <div className="mt-10">
@@ -480,7 +486,9 @@ export default function Checkout({ onBack }: CheckoutProps) {
                       envío.
                     </p>
                   ) : shippingLoading ? (
-                    <p className="text-sm text-black/45">Validando dirección...</p>
+                    <p className="text-sm text-black/45">
+                      Validando dirección...
+                    </p>
                   ) : shippingManual ? (
                     <div className="border border-black/15 bg-white/60 p-5">
                       <div className="flex items-start gap-3">
@@ -488,10 +496,12 @@ export default function Checkout({ onBack }: CheckoutProps) {
                           <Truck className="h-4 w-4" strokeWidth={1.5} />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold">Envío a coordinar</p>
+                          <p className="text-sm font-semibold">
+                            Envío a coordinar
+                          </p>
                           <p className="mt-1 text-sm leading-6 text-black/55">
-                            No pudimos calcular automáticamente el costo de envío
-                            para esta ubicación.
+                            No pudimos calcular automáticamente el costo de
+                            envío para esta ubicación.
                           </p>
                           <p className="mt-2 text-sm leading-6 text-black/55">
                             Podés continuar y nos vamos a contactar por WhatsApp
@@ -508,7 +518,9 @@ export default function Checkout({ onBack }: CheckoutProps) {
                       <div className="flex items-center gap-3">
                         <Truck className="h-5 w-5" strokeWidth={1.5} />
                         <div>
-                          <p className="text-sm font-semibold">Envío a coordinar</p>
+                          <p className="text-sm font-semibold">
+                            Envío a coordinar
+                          </p>
                           <p className="mt-1 text-sm text-black/55">
                             El costo se confirmará por WhatsApp.
                           </p>
@@ -563,7 +575,8 @@ export default function Checkout({ onBack }: CheckoutProps) {
                   ¿Por dónde querés comprar?
                 </h2>
                 <p className="mb-8 max-w-xl text-sm leading-6 text-black/50">
-                  Elegí el medio con el que querés realizar el pago de tu pedido.
+                  Elegí el medio con el que querés realizar el pago de tu
+                  pedido.
                 </p>
 
                 <div className="mb-8 space-y-3">
@@ -587,7 +600,10 @@ export default function Checkout({ onBack }: CheckoutProps) {
                 {shippingManual && (
                   <div className="mb-8 border border-black/15 bg-white/60 p-4">
                     <div className="flex gap-3">
-                      <Truck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
+                      <Truck
+                        className="mt-0.5 h-4 w-4 shrink-0"
+                        strokeWidth={1.5}
+                      />
                       <p className="text-xs leading-5 text-black/60">
                         El costo del envío todavía no está incluido en el total.
                         Nos vamos a contactar por WhatsApp para coordinarlo.
@@ -637,8 +653,8 @@ export default function Checkout({ onBack }: CheckoutProps) {
                 </h2>
 
                 <p className="mb-8 max-w-md text-sm leading-6 text-black/55">
-                  Gracias por tu compra. Te enviamos un correo con la confirmación
-                  y el seguimiento del envío.
+                  Gracias por tu compra. Te enviamos un correo con la
+                  confirmación y el seguimiento del envío.
                 </p>
 
                 <div className="mb-10 w-full max-w-md border border-black/15 p-5">
@@ -667,7 +683,8 @@ export default function Checkout({ onBack }: CheckoutProps) {
 
                   {shippingManual && (
                     <p className="mt-4 text-xs leading-5 text-black/50">
-                      El costo del envío se confirmará posteriormente por WhatsApp.
+                      El costo del envío se confirmará posteriormente por
+                      WhatsApp.
                     </p>
                   )}
                 </div>
@@ -714,7 +731,10 @@ export default function Checkout({ onBack }: CheckoutProps) {
               {shippingManual && (
                 <div className="border-t border-black/15 px-5 py-4">
                   <div className="flex items-start gap-2 text-[10px] uppercase tracking-[0.12em] text-black/50">
-                    <Truck className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={1.5} />
+                    <Truck
+                      className="mt-0.5 h-4 w-4 shrink-0"
+                      strokeWidth={1.5}
+                    />
                     <span>Envío a coordinar por WhatsApp</span>
                   </div>
                 </div>

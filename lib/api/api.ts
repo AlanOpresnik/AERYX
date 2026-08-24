@@ -60,11 +60,20 @@ export const api = {
 
     getById: (id: string) => request<Product>(`/api/products/${id}`),
 
-    create: (product: BodyInit) =>
-      request<Product>("/api/products", {
-        method: "POST",
-        body: product,
-      }),
+create: (payload: Product | FormData) => {
+  if (payload instanceof FormData) {
+    return request<Product>("/api/products", {
+      method: "POST",
+      body: payload,
+    });
+  }
+
+  return request<Product>("/api/products", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+},
 
     update: (id: string, product: Partial<Product>) =>
       request<Product>(`/api/products/${id}`, {
@@ -169,17 +178,17 @@ export const api = {
       }),
     getAll: () => request<Order[]>("/api/orders/all"),
     dashboard: {
-  getMetrics: () =>
-    request<{
-      success: boolean;
-      metrics: {
-        netSales: number;
-        orders: number;
-        averageTicket: number;
-        totalOrders: number;
-      };
-    }>("/api/orders/metric"),
-},
+      getMetrics: () =>
+        request<{
+          success: boolean;
+          metrics: {
+            netSales: number;
+            orders: number;
+            averageTicket: number;
+            totalOrders: number;
+          };
+        }>("/api/orders/metric"),
+    },
   },
 
   users: {
