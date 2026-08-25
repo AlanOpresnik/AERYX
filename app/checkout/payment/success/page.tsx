@@ -57,7 +57,7 @@ export default function PaymentSuccessPage() {
         }
 
         const response = await fetch(
-          `http://localhost:8080/api/orders/${externalReference}`,
+          `${baseUrl}/api/orders/${externalReference}`,
           {
             method: "GET",
             headers: {
