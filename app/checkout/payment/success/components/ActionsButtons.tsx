@@ -20,7 +20,7 @@ export default function ActionsButtons({mounted}:Props) {
       </Link>
 
       <Link
-        href="/perfil/pedidos"
+        href="/profile/pedidos"
         className="group flex items-center justify-center !text-white gap-3 bg-black px-10 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#1a1a1a]"
       >
         Ver mis pedidos

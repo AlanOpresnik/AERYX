@@ -1,6 +1,5 @@
 "use client";
 
-import { UserDataInterface } from "@/lib/interface/User";
 import {
   FileText,
   HelpCircle,
@@ -11,7 +10,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 
 interface AsideProfileProps {
   firstName?: string;
@@ -19,56 +17,45 @@ interface AsideProfileProps {
   createdAt?: string;
 }
 
+const NAV_ITEMS = [
+  {
+    key: "resumen",
+    label: "Resumen",
+    href: "/profile",
+    icon: User,
+  },
+  {
+    key: "pedidos",
+    label: "Pedidos",
+    href: "/profile/pedidos",
+    icon: Package,
+  },
+  {
+    key: "datos",
+    label: "Datos personales",
+    href: "/profile/data",
+    icon: FileText,
+  },
+  {
+    key: "direcciones",
+    label: "Direcciones",
+    href: "/profile/direction",
+    icon: MapPin,
+  },
+  {
+    key: "ayuda",
+    label: "Ayuda",
+    href: "/help",
+    icon: HelpCircle,
+  },
+];
+
 export default function AsideProfile({
   firstName,
   lastName,
-  createdAt
+  createdAt,
 }: AsideProfileProps) {
   const pathname = usePathname();
-  const [hash, setHash] = useState("");
-
-  useEffect(() => {
-    const updateHash = () => {
-      setHash(window.location.hash);
-    };
-
-    updateHash();
-
-    window.addEventListener("hashchange", updateHash);
-
-    return () => {
-      window.removeEventListener("hashchange", updateHash);
-    };
-  }, []);
-
-  const NAV_ITEMS = [
-    {
-      key: "resumen",
-      label: "Resumen",
-      href: "/profile",
-      icon: User,
-    },
-
-    {
-      key: "datos",
-      label: "Datos personales",
-      href: "/profile/data",
-      icon: FileText,
-    },
-    {
-      key: "direcciones",
-      label: "Direcciones",
-      href: "/profile/direction",
-      icon: MapPin,
-    },
-    {
-      key: "ayuda",
-      label: "Ayuda",
-      href: "/help",
-      icon: HelpCircle,
-    },
-  ];
-
 
   const initials = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`;
 
@@ -84,7 +71,9 @@ export default function AsideProfile({
         </div>
 
         <div>
-          <p className="font-semibold text-neutral-900">{firstName + ' ' + lastName}</p>
+          <p className="font-semibold text-neutral-900">
+            {firstName + " " + lastName}
+          </p>
 
           <span className="inline-block mt-1 text-xs tracking-wide uppercase bg-neutral-100 text-neutral-500 px-2 py-0.5 rounded-full">
             Miembro desde {createdAt}
@@ -96,18 +85,9 @@ export default function AsideProfile({
 
       <nav className="flex flex-col gap-1">
         {NAV_ITEMS.map(({ key, label, icon: Icon, href }) => {
-          let active = false;
-
-          if (key === "pedidos") {
-            active = pathname === "/profile" && hash === "#pedidos";
-          } else {
-            const cleanHref = href.split("#")[0];
-
-            active =
-              pathname === cleanHref ||
-              (cleanHref !== "/profile" &&
-                pathname.startsWith(`${cleanHref}/`));
-          }
+          const active =
+            pathname === href ||
+            (href !== "/profile" && pathname.startsWith(`${href}/`));
 
           return (
             <Link
@@ -120,7 +100,6 @@ export default function AsideProfile({
               }`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={1.7} />
-
               {label}
             </Link>
           );

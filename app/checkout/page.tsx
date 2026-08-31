@@ -13,7 +13,7 @@ import AsideProducts from "./components/AsideProducts/AsideProducts";
 import Summary from "./components/Summary/Summary";
 import { ShippingOption } from "./components/ShippingOption/ShippingOption";
 import BankData from "./components/Bank_data/BankData";
-import { api } from "@/lib/api/api";
+import { api, EnviopackQuote } from "@/lib/api/api";
 import { useAuth } from "@clerk/nextjs";
 import Steps from "./components/Steps/Steps";
 
@@ -42,6 +42,7 @@ type ShippingOptionType = {
   title: string;
   description: string;
   price: number;
+  estimatedDelivery: string;
 };
 
 const STEPS: { id: CheckoutStep; label: string }[] = [
@@ -49,6 +50,28 @@ const STEPS: { id: CheckoutStep; label: string }[] = [
   { id: "envio", label: "Envío" },
   { id: "pago", label: "Compra" },
 ];
+
+// Enviopack ordena por precio ascendente por default, pero le ponemos
+// nombre + servicio para que el comprador entienda qué está eligiendo.
+const SERVICE_LABELS: Record<string, string> = {
+  N: "Estándar",
+  P: "Prioritario",
+  X: "Exprés",
+  R: "Devolución",
+};
+
+function quoteToOption(quote: EnviopackQuote, index: number): ShippingOptionType {
+  const correoNombre = quote.correo?.nombre || "Correo";
+  const servicioLabel = quote.servicio ? SERVICE_LABELS[quote.servicio] || quote.servicio : "Estándar";
+
+  return {
+    id: `enviopack-${quote.correo?.id || "correo"}-${quote.servicio || "N"}-${index}`,
+    title: `${correoNombre} (${servicioLabel})`,
+    description: "Envío a domicilio gestionado a través de Enviopack.",
+    price: Number(quote.valor) || 0,
+    estimatedDelivery: quote.horas_entrega ? `${quote.horas_entrega} horas` : "A coordinar",
+  };
+}
 
 export default function Checkout({ onBack }: CheckoutProps) {
   const {
@@ -67,6 +90,11 @@ export default function Checkout({ onBack }: CheckoutProps) {
 
   const [savedAddress, setSavedAddress] = useState<SavedAddress | null>(null);
   const [savedAddressLoading, setSavedAddressLoading] = useState(true);
+
+  // ID de Mongo del usuario logueado (no el clerkId). Sale de
+  // api.users.getMe() y viaja en customer.userId al crear la order.
+  // Si no hay sesión, queda null -> checkout como invitado.
+  const [mongoUserId, setMongoUserId] = useState<string | null>(null);
 
   const [step, setStep] = useState<CheckoutStep>("comprador");
 
@@ -106,8 +134,12 @@ export default function Checkout({ onBack }: CheckoutProps) {
         const token = await getToken();
         const response = await api.users.getMe(token);
 
-        if (!cancelled && response?.success && response.user?.address) {
-          setSavedAddress(response.user.address as SavedAddress);
+        if (!cancelled && response?.success && response.user) {
+          setMongoUserId(response.user._id);
+
+          if (response.user.address) {
+            setSavedAddress(response.user.address as SavedAddress);
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -186,6 +218,15 @@ export default function Checkout({ onBack }: CheckoutProps) {
       setShippingMethod(null);
       setShippingManual(false);
 
+      // Peso/volumen por item para que el backend arme el "paquete" que
+      // le manda a Enviopack. Si tu validateCart no trae weightKg/volumeM3
+      // en cada item, quedan undefined y el backend usa un default.
+      const shippingItems = items.map((item) => ({
+        weightKg: (item as { weightKg?: number }).weightKg,
+        volumeM3: (item as { volumeM3?: number }).volumeM3,
+        quantity: item.quantity,
+      }));
+
       const response = await api.shipping.evaluate({
         address,
         addressNumber,
@@ -198,6 +239,7 @@ export default function Checkout({ onBack }: CheckoutProps) {
         longitude: formData.longitude,
         placeId: formData.placeId ?? undefined,
         approximate: formData.approximate,
+        items: shippingItems,
       });
 
       if (!response || !response.success || !response.shipping) {
@@ -208,31 +250,29 @@ export default function Checkout({ onBack }: CheckoutProps) {
         return;
       }
 
-      const shipping = response.shipping;
+      // Cerca del depósito: una sola opción de envío directo.
+      // Lejos: si Enviopack devolvió varias cotizaciones, se las
+      // mostramos todas para que el comprador elija; si por lo que sea
+      // solo tenemos la opción resumida, usamos esa como única opción.
+      const options: ShippingOptionType[] =
+        response.decision === "enviopack" && response.enviopackQuotes?.length
+          ? response.enviopackQuotes.map(quoteToOption)
+          : [
+              {
+                id: response.shipping.id,
+                title: response.shipping.title,
+                description: response.shipping.description,
+                price: response.shipping.price ?? 0,
+                estimatedDelivery: response.shipping.estimatedDelivery,
+              },
+            ];
 
-      const option: ShippingOptionType = {
-        id: shipping.id,
-        title: shipping.title,
-        description: shipping.description,
-        price: shipping.price ?? 0,
-      };
-
-      setShippingOptions([option]);
-      setShippingMethod(option.id);
+      setShippingOptions(options);
+      setShippingMethod(options[0]?.id ?? null);
       setShippingManual(false);
       setAddressValidated(true);
     } catch (error: any) {
       console.error("Error calculando envío:", error);
-
-      const status = error?.response?.status;
-
-      if (status === 422) {
-        setShippingOptions([]);
-        setShippingMethod("manual");
-        setShippingManual(true);
-        setAddressValidated(true);
-        return;
-      }
 
       setShippingOptions([]);
       setShippingMethod("manual");
@@ -281,6 +321,7 @@ export default function Checkout({ onBack }: CheckoutProps) {
           lastName: formData.lastName,
           email: formData.email,
           phone: formData.phone,
+          userId: mongoUserId,
         },
         shippingAddress: {
           address: formData.address,
@@ -320,15 +361,7 @@ export default function Checkout({ onBack }: CheckoutProps) {
         })),
       };
 
-      console.log("========== CHECKOUT DATA ==========");
-      console.log(JSON.stringify(data, null, 2));
-      console.log("====================================");
-
       const response = await api.orders.create(data);
-
-      console.log("========== RESPUESTA BACKEND ==========");
-      console.log(response);
-      console.log("=======================================");
 
       if (paymentMethod === "mp" && response?.mercadoPago?.initPoint) {
         window.location.href = response.mercadoPago.initPoint;
@@ -536,7 +569,7 @@ export default function Checkout({ onBack }: CheckoutProps) {
                           onSelect={() => setShippingMethod(option.id)}
                           icon={<Truck className="h-5 w-5" strokeWidth={1.5} />}
                           title={option.title}
-                          desc={option.description}
+                          desc={`${option.description} · Llega en ${option.estimatedDelivery}`}
                           price={
                             option.price === 0
                               ? "Gratis"
@@ -754,9 +787,9 @@ export default function Checkout({ onBack }: CheckoutProps) {
               <Truck className="h-4 w-4" strokeWidth={1.5} />
               {shippingManual
                 ? "Envío a coordinar"
-                : shippingMethod === "express"
-                  ? "Envío exprés 24-48h"
-                  : "Envío estándar 2-4 días"}
+                : selectedShippingOption
+                  ? `Llega en ${selectedShippingOption.estimatedDelivery}`
+                  : "Elegí un método de envío"}
             </div>
           </aside>
         </div>

@@ -17,6 +17,25 @@ export type UserAddress = {
   province: string;
 };
 
+// Item que le mandamos al backend para que calcule peso/paquete del envío.
+// weightKg/volumeM3 son opcionales: si no vienen, el backend usa un default.
+export type ShippingItemInput = {
+  weightKg?: number;
+  volumeM3?: number;
+  quantity: number;
+};
+
+// Una cotización individual devuelta por Enviopack (array crudo de
+// /cotizar/precio/a-domicilio, ver GET /cotizar/precio/a-domicilio).
+export type EnviopackQuote = {
+  correo?: { id: string; nombre: string };
+  despacho?: string;
+  modalidad?: string;
+  servicio?: string;
+  valor: string;
+  horas_entrega?: number;
+};
+
 export async function request<T>(
   endpoint: string,
   options?: RequestInit,
@@ -60,20 +79,20 @@ export const api = {
 
     getById: (id: string) => request<Product>(`/api/products/${id}`),
 
-create: (payload: Product | FormData) => {
-  if (payload instanceof FormData) {
-    return request<Product>("/api/products", {
-      method: "POST",
-      body: payload,
-    });
-  }
+    create: (payload: Product | FormData) => {
+      if (payload instanceof FormData) {
+        return request<Product>("/api/products", {
+          method: "POST",
+          body: payload,
+        });
+      }
 
-  return request<Product>("/api/products", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-},
+      return request<Product>("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    },
 
     update: (id: string, product: Partial<Product>) =>
       request<Product>(`/api/products/${id}`, {
@@ -106,6 +125,7 @@ create: (payload: Product | FormData) => {
         firstName: string;
         lastName: string;
         email: string;
+        userId?: string | null;
         phone: string;
       };
 
@@ -276,7 +296,7 @@ create: (payload: Product | FormData) => {
 
   shipping: {
     // =====================================================
-    // AUTOCOMPLETE
+    // AUTOCOMPLETE (sin cambios, sigue siendo GET)
     // =====================================================
 
     autocomplete: (
@@ -290,12 +310,7 @@ create: (payload: Product | FormData) => {
 
         results: {
           id: string;
-
-          // Nominatim devuelve un placeId numérico.
-          // Georef (usado como fallback de altura) no
-          // tiene ese concepto, así que puede venir null.
           placeId: number | null;
-
           osmType: string | null;
           osmId: number | null;
 
@@ -312,15 +327,7 @@ create: (payload: Product | FormData) => {
 
           importance: number;
           type: string | null;
-
-          // De dónde salió el resultado: nominatim,
-          // georef, o una variante *_street_level cuando
-          // no se encontró la altura exacta.
           source?: string;
-
-          // true cuando no se encontró la altura exacta
-          // en ninguna fuente y el punto corresponde solo
-          // a la calle (aproximado).
           approximate?: boolean;
         }[];
       }>(
@@ -333,6 +340,11 @@ create: (payload: Product | FormData) => {
 
     // =====================================================
     // EVALUAR ENVÍO
+    // =====================================================
+    //
+    // Ahora es POST: el backend necesita el array `items` en el body
+    // (peso/volumen del carrito) para pedirle una cotización precisa
+    // a Enviopack cuando la dirección está lejos del depósito.
     // =====================================================
 
     evaluate: ({
@@ -347,6 +359,7 @@ create: (payload: Product | FormData) => {
       longitude,
       placeId,
       approximate,
+      items,
     }: {
       address: string;
       addressNumber: string;
@@ -364,43 +377,13 @@ create: (payload: Product | FormData) => {
       placeId?: number | string | null;
 
       approximate?: boolean;
-    }) => {
-      const params = new URLSearchParams();
 
-      params.set("address", address);
-      params.set("address_number", addressNumber);
-
-      params.set("between_street_1", betweenStreet1 || "");
-
-      params.set("between_street_2", betweenStreet2 || "");
-
-      params.set("city", city);
-      params.set("postal_code", postalCode);
-
-      if (province) {
-        params.set("province", province);
-      }
-
-      if (latitude !== null && latitude !== undefined) {
-        params.set("latitude", String(latitude));
-      }
-
-      if (longitude !== null && longitude !== undefined) {
-        params.set("longitude", String(longitude));
-      }
-
-      if (placeId !== null && placeId !== undefined) {
-        params.set("place_id", String(placeId));
-      }
-
-      if (approximate) {
-        params.set("approximate", "true");
-      }
-
-      return request<{
+      items?: ShippingItemInput[];
+    }) =>
+      request<{
         success: boolean;
 
-        decision: string;
+        decision: "near" | "enviopack";
 
         message: string;
 
@@ -408,12 +391,7 @@ create: (payload: Product | FormData) => {
 
         distanceKm: number;
 
-        geocodingMethod: string;
-
-        origin: {
-          lat: number;
-          lon: number;
-        };
+        geocodingMethod: string | null;
 
         destination: {
           lat: number;
@@ -424,15 +402,9 @@ create: (payload: Product | FormData) => {
         address: {
           street: string;
           number: string;
-
-          betweenStreet1: string | null;
-          betweenStreet2: string | null;
-
           city: string;
           postalCode: string;
           province: string;
-
-          placeId: string | null;
         };
 
         shipping: {
@@ -445,8 +417,26 @@ create: (payload: Product | FormData) => {
           estimatedDelivery: string;
         } | null;
 
-        record: unknown;
-      }>(`/api/shipping/evaluate?${params.toString()}`);
-    },
+        // Solo viene poblado cuando decision === "enviopack": el listado
+        // completo de cotizaciones (no solo la más barata), por si querés
+        // dejar que el comprador elija entre varias.
+        enviopackQuotes: EnviopackQuote[] | null;
+      }>("/api/shipping/evaluate", {
+        method: "POST",
+        body: JSON.stringify({
+          address,
+          addressNumber,
+          betweenStreet1,
+          betweenStreet2,
+          city,
+          postalCode,
+          province,
+          latitude,
+          longitude,
+          placeId,
+          approximate,
+          items,
+        }),
+      }),
   },
 };
