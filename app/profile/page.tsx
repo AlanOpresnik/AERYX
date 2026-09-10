@@ -68,9 +68,9 @@ export default function Perfil() {
           const isShipped = o.status === "closed"; // Tiendanube often closes orders when shipped
           const isCancelled = o.status === "cancelled";
 
-          let localStatus = "Pendiente";
-          if (isPaid) localStatus = "Aprobado";
-          if (isShipped) localStatus = "Enviado";
+          let localStatus: "Pendiente" | "Pagado" | "En camino" | "Cancelado" = "Pendiente";
+          if (isPaid) localStatus = "Pagado";
+          if (isShipped) localStatus = "En camino";
           if (isCancelled) localStatus = "Cancelado";
 
           const timeline = [
