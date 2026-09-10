@@ -10,50 +10,10 @@ import { Order } from "@/lib/interface/OrderInterface";
 import ProfileInfoCard from "./components/PersonalInfo/PersonalInfo";
 import { UserDataInterface } from "@/lib/interface/User";
 
-const orders: Order[] = [
-  {
-    id: "123",
-    status: "Pendiente",
-    method: "Transferencia bancaria",
-    amount: "$125.000",
-    date: "20 Ago 2026",
-    timeline: [
-      {
-        title: "Pedido realizado",
-        time: "14:32",
-        state: "done",
-      },
-      {
-        title: "En revisión",
-        time: "Ahora",
-        state: "done",
-        note: "Estamos verificando tu transferencia bancaria.",
-      },
-      {
-        title: "Transferencia Aprobada",
-        time: "Ahora",
-        state: "done",
-        note: "Tu pago se realizó correctamente.",
-      },
-      {
-        title: "Preparando tu pedido para ser entregado",
-        time: "Ahora",
-        state: "current",
-        note: "Estamos empaquetando tu pedido para que llegue lo antes posible.",
-      },
-      {
-        title: "Enviado",
-        time: "Pendiente",
-        state: "upcoming",
-      },
-    ],
-  },
-];
-
 const CHIPS = [
-  { key: "todos", label: "Todos", count: 3 },
-  { key: "revision", label: "En revisión", count: 1 },
-  { key: "historial", label: "Historial", count: 2 },
+  { key: "todos", label: "Todos", count: 0 },
+  { key: "revision", label: "En revisión", count: 0 },
+  { key: "historial", label: "Historial", count: 0 },
 ];
 
 export default function Perfil() {
@@ -64,6 +24,9 @@ export default function Perfil() {
   const [userData, setUserData] = useState<UserDataInterface | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
   const [userError, setUserError] = useState<string | null>(null);
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   const [filter, setFilter] = useState("todos");
 
@@ -78,53 +41,82 @@ export default function Perfil() {
       return;
     }
 
-    const getUserData = async () => {
+    setUserData({
+      _id: user.id,
+      clerkId: user.id,
+      firstName: user.firstName || "Usuario",
+      lastName: user.lastName || "",
+      email: user.primaryEmailAddress?.emailAddress || "",
+      createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : new Date().toISOString(),
+    });
+    setLoadingUser(false);
+
+    const getOrders = async () => {
       try {
-        setLoadingUser(true);
-        setUserError(null);
+        setLoadingOrders(true);
+        const email = user.primaryEmailAddress?.emailAddress;
+        if (!email) return;
 
-        const token = await getToken();
+        const res = await fetch(`/api/tiendanube/orders?email=${email}`);
+        const data = await res.json();
+        
+        if (!Array.isArray(data)) return;
 
-        if (!token) {
-          throw new Error("No se pudo obtener el token de autenticación.");
-        }
+        // Map Tiendanube orders to local UI format
+        const mappedOrders: Order[] = data.map((o: any) => {
+          const isPaid = o.payment?.status === "paid";
+          const isShipped = o.status === "closed"; // Tiendanube often closes orders when shipped
+          const isCancelled = o.status === "cancelled";
 
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/users/me`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`,
+          let localStatus = "Pendiente";
+          if (isPaid) localStatus = "Aprobado";
+          if (isShipped) localStatus = "Enviado";
+          if (isCancelled) localStatus = "Cancelado";
+
+          const timeline = [
+            {
+              title: "Pedido realizado",
+              time: "Realizado",
+              state: "done" as const
             },
-          },
-        );
+            {
+              title: isCancelled ? "Pago cancelado" : "Pago",
+              time: isCancelled ? "Cancelado" : (isPaid ? "Aprobado" : "En revisión"),
+              state: isCancelled ? "current" as const : (isPaid ? "done" as const : "current" as const),
+              note: isCancelled 
+                ? "El pedido fue cancelado." 
+                : (isPaid ? "Tu pago se procesó correctamente." : "Estamos verificando el pago."),
+            },
+            {
+              title: "Envío",
+              time: isShipped ? "Enviado" : "Preparando",
+              state: isCancelled ? "upcoming" as const : (isShipped ? "done" as const : (isPaid ? "current" as const : "upcoming" as const)),
+              note: isShipped ? "Tu pedido está en camino." : "Estamos empaquetando tu pedido.",
+            }
+          ];
 
-        const data = await response.json();
+          return {
+            id: o._id,
+            status: localStatus,
+            method: o.payment?.method || "Desconocido",
+            amount: `$${(o.totals?.total || 0).toLocaleString("es-AR")}`,
+            date: new Date(o.createdAt).toLocaleDateString("es-AR", { day: "numeric", month: "short", year: "numeric" }),
+            timeline
+          };
+        });
 
-        if (!response.ok) {
-          throw new Error(
-            data?.message || "No se pudo obtener la información del usuario.",
-          );
-        }
-
-        setUserData(data.user);
+        setOrders(mappedOrders);
       } catch (error) {
-        console.error("ERROR OBTENIENDO USUARIO:", error);
-
-        setUserError(
-          error instanceof Error
-            ? error.message
-            : "Error obteniendo la información del usuario.",
-        );
+        console.error("Error fetching orders:", error);
       } finally {
-        setLoadingUser(false);
+        setLoadingOrders(false);
       }
     };
 
-    getUserData();
-  }, [isLoaded, user, getToken, router]);
+    getOrders();
+  }, [isLoaded, user, router]);
 
-  if (!isLoaded || loadingUser) {
+  if (!isLoaded || loadingUser || loadingOrders) {
     return (
       <div className="min-h-screen pt-24 bg-neutral-100 flex items-center justify-center">
         <p className="text-sm text-neutral-400">Cargando perfil...</p>
@@ -132,10 +124,18 @@ export default function Perfil() {
     );
   }
 
+  // Update CHIPS counts dynamically
+  const chipsWithCounts = CHIPS.map(chip => {
+    if (chip.key === "todos") return { ...chip, count: orders.length };
+    if (chip.key === "revision") return { ...chip, count: orders.filter(o => o.status === "Pendiente").length };
+    if (chip.key === "historial") return { ...chip, count: orders.filter(o => o.status !== "Pendiente").length };
+    return chip;
+  });
+
   const filteredOrders = orders.filter((order) => {
     if (filter === "todos") return true;
 
-    if (filter === "Pendiente") {
+    if (filter === "revision") {
       return order.status === "Pendiente";
     }
 
@@ -195,7 +195,7 @@ export default function Perfil() {
               <h2 className="font-display text-xl font-medium">Pedidos</h2>
 
               <div className="flex gap-2">
-                {CHIPS.map((chip) => (
+                {chipsWithCounts.map((chip) => (
                   <button
                     key={chip.key}
                     type="button"

@@ -17,25 +17,6 @@ export type UserAddress = {
   province: string;
 };
 
-// Item que le mandamos al backend para que calcule peso/paquete del envío.
-// weightKg/volumeM3 son opcionales: si no vienen, el backend usa un default.
-export type ShippingItemInput = {
-  weightKg?: number;
-  volumeM3?: number;
-  quantity: number;
-};
-
-// Una cotización individual devuelta por Enviopack (array crudo de
-// /cotizar/precio/a-domicilio, ver GET /cotizar/precio/a-domicilio).
-export type EnviopackQuote = {
-  correo?: { id: string; nombre: string };
-  despacho?: string;
-  modalidad?: string;
-  servicio?: string;
-  valor: string;
-  horas_entrega?: number;
-};
-
 export async function request<T>(
   endpoint: string,
   options?: RequestInit,
@@ -75,128 +56,42 @@ export async function request<T>(
 
 export const api = {
   products: {
-    getAll: () => request<Product[]>("/api/products"),
-
-    getById: (id: string) => request<Product>(`/api/products/${id}`),
-
-    create: (payload: Product | FormData) => {
-      if (payload instanceof FormData) {
-        return request<Product>("/api/products", {
-          method: "POST",
-          body: payload,
-        });
-      }
-
-      return request<Product>("/api/products", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    getAll: (params?: { category_id?: number; q?: string }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.category_id) searchParams.set('category_id', String(params.category_id));
+      if (params?.q) searchParams.set('q', params.q);
+      const qs = searchParams.toString();
+      return request<Product[]>(`/api/tiendanube/products${qs ? `?${qs}` : ''}`);
     },
 
-    update: (id: string, product: Partial<Product>) =>
-      request<Product>(`/api/products/${id}`, {
-        method: "PUT",
-        body: JSON.stringify(product),
-      }),
-
-    delete: (id: string) =>
-      request(`/api/products/${id}`, {
-        method: "DELETE",
-      }),
+    getById: (id: string) => request<Product>(`/api/tiendanube/products/${id}`),
 
     validateCart: (cart: CartStorageItem[]) =>
       request<{
         success: boolean;
-        data: {
-          items: CheckoutItem[];
-        };
+        data: { items: CheckoutItem[] };
         message?: string;
-      }>("/api/cart/validate", {
+      }>("/api/tiendanube/cart/validate", {
         method: "POST",
-        body: JSON.stringify({
-          items: cart,
-        }),
+        body: JSON.stringify({ items: cart }),
       }),
   },
   orders: {
     create: (data: {
-      customer: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        userId?: string | null;
-        phone: string;
-      };
-
-      shippingAddress: {
-        address: string;
-        addressNumber: string;
-        betweenStreet1: string;
-        betweenStreet2: string;
-        city: string;
-        postalCode: string;
-        province: string;
-        latitude: number | null;
-        longitude: number | null;
-        placeId: string | null;
-        approximate: boolean;
-      };
-
-      shipping: {
-        method: string | null;
-        manual: boolean;
-
-        option: {
-          id: string;
-          title: string;
-          description: string;
-          price: number;
-        } | null;
-
-        cost: number;
-      };
-
-      payment: {
-        method: string;
-      };
-
-      items: {
-        productId: string;
-        quantity: number;
-      }[];
+      items: { variantId: number; quantity: number }[];
+      contactEmail?: string;
+      contactName?: string;
+      contactLastname?: string;
     }) =>
       request<{
         success: boolean;
-        message: string;
-
-        order: {
-          id: string;
-          status: string;
-
-          payment: {
-            method: string;
-            status: string;
-            preferenceId?: string | null;
-          };
-
-          totals: {
-            subtotal: number;
-            shipping: number;
-            total: number;
-          };
-        };
-
-        mercadoPago?: {
-          preferenceId: string;
-          initPoint: string;
-          sandboxInitPoint?: string;
-        };
-      }>("/api/mp/preference", {
+        checkoutUrl: string;
+      }>("/api/tiendanube/checkout", {
         method: "POST",
         body: JSON.stringify(data),
       }),
-    getAll: () => request<Order[]>("/api/orders/all"),
+    getAll: () => request<Order[]>("/api/tiendanube/orders"),
+    getById: (id: string) => request<Order>("/api/tiendanube/orders/" + id),
     dashboard: {
       getMetrics: () =>
         request<{
@@ -207,7 +102,7 @@ export const api = {
             averageTicket: number;
             totalOrders: number;
           };
-        }>("/api/orders/metric"),
+        }>("/api/tiendanube/orders/metrics"),
     },
   },
 
@@ -292,151 +187,5 @@ export const api = {
         },
         token,
       ),
-  },
-
-  shipping: {
-    // =====================================================
-    // AUTOCOMPLETE (sin cambios, sigue siendo GET)
-    // =====================================================
-
-    autocomplete: (
-      address: string,
-      addressNumber: string,
-      city: string,
-      postalCode: string,
-    ) =>
-      request<{
-        success: boolean;
-
-        results: {
-          id: string;
-          placeId: number | null;
-          osmType: string | null;
-          osmId: number | null;
-
-          address: string;
-          addressNumber: string;
-          fullAddress: string;
-
-          city: string;
-          province: string;
-          postalCode: string;
-
-          lat: number;
-          lon: number;
-
-          importance: number;
-          type: string | null;
-          source?: string;
-          approximate?: boolean;
-        }[];
-      }>(
-        `/api/shipping/autocomplete?` +
-          `address=${encodeURIComponent(address)}` +
-          `&address_number=${encodeURIComponent(addressNumber)}` +
-          `&city=${encodeURIComponent(city)}` +
-          `&postal_code=${encodeURIComponent(postalCode)}`,
-      ),
-
-    // =====================================================
-    // EVALUAR ENVÍO
-    // =====================================================
-    //
-    // Ahora es POST: el backend necesita el array `items` en el body
-    // (peso/volumen del carrito) para pedirle una cotización precisa
-    // a Enviopack cuando la dirección está lejos del depósito.
-    // =====================================================
-
-    evaluate: ({
-      address,
-      addressNumber,
-      betweenStreet1,
-      betweenStreet2,
-      city,
-      postalCode,
-      province,
-      latitude,
-      longitude,
-      placeId,
-      approximate,
-      items,
-    }: {
-      address: string;
-      addressNumber: string;
-
-      betweenStreet1?: string;
-      betweenStreet2?: string;
-
-      city: string;
-      postalCode: string;
-      province?: string;
-
-      latitude?: number | null;
-      longitude?: number | null;
-
-      placeId?: number | string | null;
-
-      approximate?: boolean;
-
-      items?: ShippingItemInput[];
-    }) =>
-      request<{
-        success: boolean;
-
-        decision: "near" | "enviopack";
-
-        message: string;
-
-        approximate: boolean;
-
-        distanceKm: number;
-
-        geocodingMethod: string | null;
-
-        destination: {
-          lat: number;
-          lon: number;
-          displayName: string | null;
-        };
-
-        address: {
-          street: string;
-          number: string;
-          city: string;
-          postalCode: string;
-          province: string;
-        };
-
-        shipping: {
-          id: string;
-          title: string;
-          description: string;
-
-          price: number | null;
-
-          estimatedDelivery: string;
-        } | null;
-
-        // Solo viene poblado cuando decision === "enviopack": el listado
-        // completo de cotizaciones (no solo la más barata), por si querés
-        // dejar que el comprador elija entre varias.
-        enviopackQuotes: EnviopackQuote[] | null;
-      }>("/api/shipping/evaluate", {
-        method: "POST",
-        body: JSON.stringify({
-          address,
-          addressNumber,
-          betweenStreet1,
-          betweenStreet2,
-          city,
-          postalCode,
-          province,
-          latitude,
-          longitude,
-          placeId,
-          approximate,
-          items,
-        }),
-      }),
   },
 };

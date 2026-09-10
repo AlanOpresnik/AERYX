@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/app/context/cartContext";
 import { CheckoutItem } from "@/lib/interface/cart";
-import { api } from "@/lib/api/api";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -14,7 +13,7 @@ interface CartSidebarProps {
 }
 
 export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
-  const { cart, removeFromCart, updateQuantity, loading } = useCart();
+  const { cart, removeFromCart, updateQuantity, loading, validateCart } = useCart();
 
   const [items, setItems] = useState<CheckoutItem[]>([]);
   const [validating, setValidating] = useState(false);
@@ -44,12 +43,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
 
     (async () => {
       try {
-        const validated = await api.products.validateCart(cart).then((res) => {
-          if (!res?.success) {
-            throw new Error(res?.message || "No se pudo validar el carrito");
-          }
-          return res.data.items;
-        });
+        const validated = await validateCart(cart);
 
         if (!cancelled) setItems(validated);
       } catch (err) {
@@ -66,7 +60,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     return () => {
       cancelled = true;
     };
-  }, [isOpen, cart]);
+  }, [isOpen, cart, validateCart]);
 
   const cartTotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -124,7 +118,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <ul className="flex flex-col gap-6">
               {items.map((item) => (
-                <li key={item.productId} className="flex gap-4">
+                <li key={item.variantId} className="flex gap-4">
                   <div className="size-20 shrink-0 overflow-hidden rounded-md bg-neutral-900">
                     {item.image && (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -138,11 +132,18 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
 
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`${mono} text-sm font-medium`}>
-                        {item.name}
-                      </p>
+                      <div className="flex flex-col">
+                        <p className={`${mono} text-sm font-medium`}>
+                          {item.name}
+                        </p>
+                        {item.variantName && item.variantName !== "Único" && (
+                          <p className={`${mono} text-xs text-muted-foreground mt-1`}>
+                            {item.variantName}
+                          </p>
+                        )}
+                      </div>
                       <button
-                        onClick={() => removeFromCart(item.productId)}
+                        onClick={() => removeFromCart(item.variantId)}
                         disabled={loading}
                         className="text-muted-foreground hover:text-foreground disabled:opacity-50"
                         aria-label={`Eliminar ${item.name}`}
@@ -151,12 +152,12 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-2">
                       <div className="flex items-center gap-2 rounded-full border border-border px-2 py-1">
                         <button
                           onClick={() =>
                             updateQuantity(
-                              item.productId,
+                              item.variantId,
                               Math.max(1, item.quantity - 1),
                             )
                           }
@@ -171,7 +172,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                         </span>
                         <button
                           onClick={() =>
-                            updateQuantity(item.productId, item.quantity + 1)
+                            updateQuantity(item.variantId, item.quantity + 1)
                           }
                           disabled={loading}
                           className="text-muted-foreground hover:text-foreground disabled:opacity-50"

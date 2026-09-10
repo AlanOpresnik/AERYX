@@ -18,11 +18,11 @@ export default function ProductCard({ product }: Props) {
       key={product._id}
     >
       <Link
-        href={`/products/${product.slug}/${product._id}`}
+        href={`/products/${product.slug}`}
         className="group block overflow-hidden rounded-xl"
       >
         <div className="relative  overflow-hidden rounded-xl bg-neutral-300 ">
-          <ViewTransition name={`product-image-${product._id}`}>
+          <ViewTransition name={`product-image-${product.slug}`}>
             <Image
               className=" object-contain bg-white transition-transform duration-700 h-80 md:h-112 xl:h-104 group-hover:scale-105"
               src={product.images[0]}
@@ -50,7 +50,7 @@ export default function ProductCard({ product }: Props) {
               <span className={`${mono} text-[.6rem] text-neutral-500`}>
                 {product.category}
               </span>
-              <ViewTransition name={`product-name-${product._id}`}>
+              <ViewTransition name={`product-name-${product.slug}`}>
                 <h3 className="mt-2 text-xl font-semibold">{product.name}</h3>
               </ViewTransition>
             </div>

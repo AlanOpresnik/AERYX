@@ -12,17 +12,9 @@ import DividerProductBanner from "@/app/products/components/DividerProductBanner
 import ProductRigthDetails from "@/app/products/components/ProductRigthDetails/ProductRigthDetails";
 import { Benefits } from "./Benefits/Benefits";
 import AddToCart from "@/app/products/components/AddToCart/AddToCart";
-import { Product } from "@/lib/interface/ProductInterface";
+import { Product, ProductVariant } from "@/lib/interface/ProductInterface";
 import { useCart } from "@/app/context/cartContext";
 
-
-const sizes = [
-  {
-    name: "L",
-    detail: "49 × 42 cm",
-    price: 50000,
-  },
-];
 
 type ProductDetailProps = {
   product: Product;
@@ -38,7 +30,19 @@ export default function ProductDetail({
 
   const { addToCart, loading } = useCart();
 
-  const price = sizes[selectedSize].price;
+  const productVariants = (product.variants ?? []).map((v) => ({
+    id: v.id,
+    name: v.values.map((val: { name: string; value: string }) => val.value).join(' / ') || 'Único',
+    detail: v.sku || '',
+    price: v.promotionalPrice ?? v.price,
+    stock: v.stock,
+  }));
+
+  const sizes = productVariants.length > 0 ? productVariants : [
+    { id: 0, name: "Único", detail: "", price: product.price, stock: product.stock },
+  ];
+
+  const price = sizes[selectedSize]?.price || product.price;
 
   const productForRight = {
     category: product.category,
@@ -51,11 +55,16 @@ export default function ProductDetail({
 
   const handleAddToCart = async () => {
     try {
+      const selectedVariant = sizes[selectedSize];
       await addToCart({
         productId: product._id,
+        variantId: selectedVariant.id,
         quantity,
+        name: product.name,
+        price: selectedVariant.price,
+        image: product.images[0] || '',
+        variantName: selectedVariant.name,
       });
-
       setAdded(true);
     } catch (error) {
       console.error("Error agregando producto al carrito:", error);
@@ -107,7 +116,7 @@ export default function ProductDetail({
                 } agregada${
                   quantity > 1 ? "s" : ""
                 } al carrito.`
-              : "En stock · Despacho en 24–48 h"}
+              : (sizes[selectedSize]?.stock === 0 ? "Sin stock" : "En stock · Despacho en 24–48 h")}
           </p>
 
           <a

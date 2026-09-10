@@ -1,14 +1,14 @@
 import React from "react";
 import ProductCarousel from "./ProductCarousel";
-import { api } from "@/lib/api/api";
+import { getProducts } from "@/lib/api/server-api";
 
 export default async function ProductCarouselWrapper() {
-  const products = await api.products.getAll();
-
-  if(!products) {
-    return <p>No hay productos</p>
+  const products = await getProducts();
+  
+  if (!products || products.length === 0) {
+    return <p>No hay productos</p>;
   }
-
+  
   return (
     <div>
       <ProductCarousel products={products} />

@@ -9,56 +9,33 @@ import {
   type ReactNode,
 } from "react";
 
-import { api } from "@/lib/api/api";
-import {
-  CartStorageItem,
-  CheckoutItem,
-} from "@/lib/interface/cart";
+import type { CartStorageItem, CheckoutItem } from "@/lib/interface/cart";
 
 type CartContextType = {
   cart: CartStorageItem[];
   cartCount: number;
   loading: boolean;
-
   addToCart: (item: CartStorageItem) => Promise<void>;
-  updateQuantity: (
-    productId: string,
-    quantity: number
-  ) => Promise<void>;
-  removeFromCart: (productId: string) => Promise<void>;
+  updateQuantity: (variantId: number, quantity: number) => Promise<void>;
+  removeFromCart: (variantId: number) => Promise<void>;
   clearCart: () => void;
-
-  validateCart: (
-    cart: CartStorageItem[]
-  ) => Promise<CheckoutItem[]>;
+  validateCart: (cart: CartStorageItem[]) => Promise<CheckoutItem[]>;
 };
 
-const CartContext = createContext<CartContextType | undefined>(
-  undefined
-);
+const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const CART_KEY = "cart";
 
-export function CartProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartStorageItem[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // =====================================================
-  // CARGAR CARRITO
-  // =====================================================
-
+  // Load cart from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CART_KEY);
-
       if (!stored) return;
-
       const parsed: unknown = JSON.parse(stored);
-
       if (Array.isArray(parsed)) {
         setCart(parsed);
       }
@@ -68,153 +45,110 @@ export function CartProvider({
     }
   }, []);
 
-  // =====================================================
-  // PERSISTIR CARRITO
-  // =====================================================
-
+  // Persist cart to localStorage
   useEffect(() => {
-    localStorage.setItem(
-      CART_KEY,
-      JSON.stringify(cart)
-    );
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart]);
 
-  // =====================================================
-  // VALIDAR CARRITO
-  // =====================================================
-
+  // Validate cart against Tiendanube
   const validateCart = useCallback(
-    async (cartToValidate: CartStorageItem[]) => {
-      const response = await api.products.validateCart(
-        cartToValidate
-      );
+    async (cartToValidate: CartStorageItem[]): Promise<CheckoutItem[]> => {
+      const res = await fetch("/api/tiendanube/cart/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: cartToValidate }),
+      });
 
-      if (!response?.success) {
-        throw new Error(
-          response?.message ||
-            "No se pudo validar el carrito"
-        );
+      if (!res.ok) {
+        throw new Error("No se pudo validar el carrito");
       }
 
-      return response.data.items;
+      const data = await res.json();
+      if (!data?.success) {
+        throw new Error(data?.message || "No se pudo validar el carrito");
+      }
+
+      return data.data.items;
     },
-    []
+    [],
   );
 
-  // =====================================================
-  // AGREGAR
-  // =====================================================
-
+  // Add to cart
   const addToCart = useCallback(
     async (item: CartStorageItem) => {
       setLoading(true);
-
       try {
         const existingItem = cart.find(
-          (cartItem) =>
-            cartItem.productId === item.productId
+          (cartItem) => cartItem.variantId === item.variantId,
         );
 
         let newCart: CartStorageItem[];
 
         if (existingItem) {
           newCart = cart.map((cartItem) =>
-            cartItem.productId === item.productId
-              ? {
-                  ...cartItem,
-                  quantity:
-                    cartItem.quantity + item.quantity,
-                }
-              : cartItem
+            cartItem.variantId === item.variantId
+              ? { ...cartItem, quantity: cartItem.quantity + item.quantity }
+              : cartItem,
           );
         } else {
           newCart = [...cart, item];
         }
 
-        // Validamos ANTES de guardar
+        // Validate before saving
         await validateCart(newCart);
-
         setCart(newCart);
       } finally {
         setLoading(false);
       }
     },
-    [cart, validateCart]
+    [cart, validateCart],
   );
 
-  // =====================================================
-  // CAMBIAR CANTIDAD
-  // =====================================================
-
+  // Update quantity
   const updateQuantity = useCallback(
-    async (
-      productId: string,
-      quantity: number
-    ) => {
-      // Si llega a 0 o menos → eliminar
+    async (variantId: number, quantity: number) => {
       if (quantity <= 0) {
-        await removeFromCart(productId);
+        await removeFromCart(variantId);
         return;
       }
 
       setLoading(true);
-
       try {
         const newCart = cart.map((item) =>
-          item.productId === productId
-            ? {
-                ...item,
-                quantity,
-              }
-            : item
+          item.variantId === variantId ? { ...item, quantity } : item,
         );
 
         await validateCart(newCart);
-
         setCart(newCart);
       } finally {
         setLoading(false);
       }
     },
-    [cart, validateCart]
+    [cart, validateCart],
   );
 
-  // =====================================================
-  // ELIMINAR
-  // =====================================================
-
+  // Remove from cart
   const removeFromCart = useCallback(
-    async (productId: string) => {
+    async (variantId: number) => {
       setLoading(true);
-
       try {
-        const newCart = cart.filter(
-          (item) =>
-            item.productId !== productId
-        );
-
+        const newCart = cart.filter((item) => item.variantId !== variantId);
         setCart(newCart);
       } finally {
         setLoading(false);
       }
     },
-    [cart]
+    [cart],
   );
 
-  // =====================================================
-  // VACIAR
-  // =====================================================
-
+  // Clear cart
   const clearCart = useCallback(() => {
     setCart([]);
     localStorage.removeItem(CART_KEY);
   }, []);
 
-  // =====================================================
-  // CANTIDAD TOTAL
-  // =====================================================
-
-  const cartCount = cart.length
+  // Total item count
+  const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <CartContext.Provider
@@ -236,12 +170,8 @@ export function CartProvider({
 
 export function useCart() {
   const context = useContext(CartContext);
-
   if (!context) {
-    throw new Error(
-      "useCart debe utilizarse dentro de CartProvider"
-    );
+    throw new Error("useCart debe utilizarse dentro de CartProvider");
   }
-
   return context;
 }

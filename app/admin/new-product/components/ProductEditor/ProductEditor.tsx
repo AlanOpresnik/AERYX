@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -343,33 +343,12 @@ export default function ProductEditor() {
     console.log("fetch('/api/products', { method: 'POST', body: formData })");
   };
 
-  const onSubmit = handleSubmit(async (data) => {
-    if (data.images.length === 0 || data.publicity.length === 0) {
-      return;
-    }
-
-    logSubmit(data);
-
-    const apiPayload = createFormData(data);
-    const product = await api.products.create(apiPayload);
-
-    if (!product) {
-      console.error("No se pudo crear el producto");
-      return;
-    }
-
-    console.log("Producto creado:", product);
-
-    setSubmitted(true);
-
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-
-    setTimeout(() => {
-      setSubmitted(false);
-    }, 4000);
+  const onSubmit = handleSubmit(async (_data) => {
+    // DEPRECATED: Product creation is now managed through Tiendanube admin panel
+    alert(
+      "La creación de productos se gestiona ahora desde el panel de administración de Tiendanube. " +
+      "Ingresá a tu tienda en tiendanube.com para agregar, editar o eliminar productos."
+    );
   });
 
   return (

@@ -1,25 +1,16 @@
 // lib/actions/product.actions.ts
+// DEPRECATED: Product creation is now managed through the Tiendanube admin panel.
+// This file is kept for backward compatibility but the action is disabled.
 
 "use server";
 
-import { api } from "@/lib/api/api";
 import { Product } from "@/lib/interface/ProductInterface";
-import { revalidatePath } from "next/cache";
 
-export async function createProductAction(product: Product) {
-  const createdProduct = await api.products.create(product);
-
-  if (!createdProduct) {
-    return {
-      success: false,
-      error: "No se pudo crear el producto",
-    };
-  }
-
-  revalidatePath("/admin");
-
+export async function createProductAction(_product: Product) {
   return {
-    success: true,
-    data: createdProduct,
+    success: false,
+    error:
+      "La creación de productos se gestiona ahora desde el panel de administración de Tiendanube. " +
+      "Ingresá a tu tienda en tiendanube.com para agregar, editar o eliminar productos.",
   };
 }
