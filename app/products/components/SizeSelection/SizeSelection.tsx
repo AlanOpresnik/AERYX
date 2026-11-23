@@ -16,50 +16,38 @@ interface Props {
 }
 
 export default function SizeSelection({ sizes, selectedSize, setSelectedSize }: Props) {
+  const current = sizes[selectedSize];
+
   return (
-    <fieldset className="mt-2">
-      <legend className="mb-4 font-mono text-[10px] uppercase tracking-[0.16em]">
-        Elegí tu medida
+    <fieldset>
+      <legend className="mb-3 flex w-full items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <span>Variante</span>
+        <span className="text-foreground">{current?.name}</span>
       </legend>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex flex-wrap gap-2">
         {sizes.map((size, index) => {
-          const isOutOfStock = size.stock !== null && size.stock !== undefined && size.stock <= 0;
+          const isOutOfStock =
+            size.stock !== null && size.stock !== undefined && size.stock <= 0;
+          const active = selectedSize === index;
 
           return (
             <button
               key={size.id ?? size.name}
               type="button"
               onClick={() => !isOutOfStock && setSelectedSize(index)}
-              aria-pressed={selectedSize === index}
+              aria-pressed={active}
               disabled={isOutOfStock}
+              title={size.detail || undefined}
               className={cn(
-                "flex min-h-20 flex-col items-start justify-between rounded-lg border p-3 text-left transition-colors",
+                "relative flex h-11 min-w-16 items-center justify-center gap-2 rounded-full border px-5 text-sm transition-all",
                 isOutOfStock
-                  ? "cursor-not-allowed border-border opacity-40"
-                  : selectedSize === index
+                  ? "cursor-not-allowed border-border text-muted-foreground/50 line-through"
+                  : active
                     ? "border-foreground bg-foreground text-background"
-                    : "border-border hover:border-foreground",
+                    : "border-border text-foreground hover:border-foreground/60",
               )}
             >
-              <div className="flex w-full items-center justify-between">
-                <span className="text-sm font-semibold">{size.name}</span>
-                {!isOutOfStock && size.stock !== null && size.stock !== undefined && (
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-                )}
-                {isOutOfStock && (
-                  <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-                )}
-              </div>
-              <span
-                className={cn(
-                  "font-mono text-[16px]",
-                  selectedSize === index && !isOutOfStock
-                    ? "text-background/80"
-                    : "text-muted-foreground",
-                )}
-              >
-                {isOutOfStock ? "Sin stock" : size.detail}
-              </span>
+              {size.name}
             </button>
           );
         })}
