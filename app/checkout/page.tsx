@@ -9,6 +9,8 @@ import { useCart } from "../context/cartContext";
 import { Footer } from "@/components/Footer/Footer";
 import CartError from "./components/CartError";
 import AsideProducts from "./components/AsideProducts/AsideProducts";
+import { GiftLine, GiftSavings, useCartGift } from "@/components/Presale/GiftLine";
+import { rememberPendingOrder } from "@/lib/pending-order";
 
 export default function Checkout({ onBack }: { onBack: () => void }) {
   const {
@@ -86,6 +88,8 @@ export default function Checkout({ onBack }: { onBack: () => void }) {
     updateQuantity(item.variantId, newQuantity);
   };
 
+  const gift = useCartGift(items);
+
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   const handleCheckout = async () => {
@@ -116,6 +120,13 @@ export default function Checkout({ onBack }: { onBack: () => void }) {
         throw new Error(data.message || 'Error al crear el checkout');
       }
 
+      if (data.giftUnavailable) {
+        alert("Se agotaron las mangas de regalo justo ahora. Tu pedido sigue sin el regalo.");
+      }
+      if (data.orderId && data.orderToken) {
+        // Se recuerda el pedido para mostrar la confirmación al volver de Tiendanube
+        rememberPendingOrder({ id: data.orderId, token: data.orderToken });
+      }
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       }
@@ -168,6 +179,13 @@ export default function Checkout({ onBack }: { onBack: () => void }) {
                   handleUpdateQuantity={handleUpdateQuantity}
                   items={items}
                 />
+
+                {gift && (
+                  <div className="space-y-3 px-5 py-5">
+                    <GiftLine gift={gift} tone="light" />
+                    <GiftSavings gift={gift} tone="light" />
+                  </div>
+                )}
 
                 {!items.length && (
                   <div className="px-5 py-10 text-center text-sm text-black/45">

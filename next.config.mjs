@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Las fotos del admin se suben de a una por server action
+  experimental: { serverActions: { bodySizeLimit: '8mb' } },
 
   images: { unoptimized: true },
   async headers() {

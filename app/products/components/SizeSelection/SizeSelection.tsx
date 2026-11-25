@@ -20,9 +20,8 @@ export default function SizeSelection({ sizes, selectedSize, setSelectedSize }: 
 
   return (
     <fieldset>
-      <legend className="mb-3 flex w-full items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-        <span>Variante</span>
-        <span className="text-foreground">{current?.name}</span>
+      <legend className="mb-3 text-sm text-muted-foreground">
+        Variante: <span className="font-medium text-foreground">{current?.name}</span>
       </legend>
       <div className="flex flex-wrap gap-2">
         {sizes.map((size, index) => {
@@ -39,7 +38,7 @@ export default function SizeSelection({ sizes, selectedSize, setSelectedSize }: 
               disabled={isOutOfStock}
               title={size.detail || undefined}
               className={cn(
-                "relative flex h-11 min-w-16 items-center justify-center gap-2 rounded-full border px-5 text-sm transition-all",
+                "relative flex h-11 min-w-16 items-center justify-center gap-2 rounded-xl border px-4 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 isOutOfStock
                   ? "cursor-not-allowed border-border text-muted-foreground/50 line-through"
                   : active

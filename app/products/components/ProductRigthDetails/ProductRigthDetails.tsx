@@ -52,7 +52,7 @@ export default function ProductRigthDetails({
       </nav>
 
       <ViewTransition name={`product-name-${product._id}`}>
-        <h1 className="mt-8 text-balance text-[clamp(2.5rem,4.6vw,4.25rem)] font-medium leading-[0.92] tracking-[-0.055em]">
+        <h1 className="mt-8 text-balance text-[clamp(2.5rem,4.6vw,4.25rem)] font-medium leading-[0.95] tracking-[-0.04em]">
           {product.name}
         </h1>
       </ViewTransition>
@@ -63,25 +63,28 @@ export default function ProductRigthDetails({
         </p>
       )}
 
-      <div className="mt-8 flex flex-wrap items-end gap-x-4 gap-y-2">
-        <strong className="text-4xl font-medium tabular-nums tracking-[-0.04em]">
+      <div className="mt-10 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <strong className="text-[2.5rem] font-medium leading-none tabular-nums tracking-[-0.04em]">
           {currency.format(selectedPrice)}
         </strong>
         {hasDiscount && (
           <>
-            <span className="pb-1 text-base text-muted-foreground line-through tabular-nums">
+            <span className="text-base text-muted-foreground line-through tabular-nums">
               {currency.format(compareAtPrice as number)}
             </span>
-            <span className="mb-1.5 rounded-full bg-red-400/15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-red-400">
-              −{off}%
-            </span>
+            <span className="text-sm font-medium text-red-400">−{off}%</span>
           </>
         )}
       </div>
-      <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-        {installment >= 1000
-          ? `3 cuotas de ${currency.format(installment)} · Precio final`
-          : "Precio final"}
+      <p className="mt-2 text-sm text-muted-foreground">
+        {installment >= 1000 ? (
+          <>
+            o 3 cuotas de{" "}
+            <span className="text-foreground tabular-nums">{currency.format(installment)}</span>
+          </>
+        ) : (
+          "Precio final, impuestos incluidos"
+        )}
       </p>
     </div>
   );

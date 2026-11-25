@@ -1,76 +1,90 @@
 import { Product } from "@/lib/interface/ProductInterface";
-import { mono } from "@/lib/products-mock-data";
-import { currency } from "@/lib/utils";
-import { ArrowRight, ShoppingBag } from "lucide-react";
+import { cn, currency } from "@/lib/utils";
+import { isOutOfStock } from "@/lib/product-stock";
+import { ArrowUpRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { ViewTransition } from "react";
+import { PresaleCardBadge } from "@/components/Presale/PresaleBadges";
 
 interface Props {
   product: Product;
+  className?: string;
 }
 
-export default function ProductCard({ product }: Props) {
+export default function ProductCard({ product, className }: Props) {
+  const price = Number(product.price) || 0;
+  const original = Number(product.originalPrice) || 0;
+  const hasDiscount = original > price;
+  const outOfStock = isOutOfStock(product);
+
   return (
-    <article
-      data-product-card
-      className="group reveal min-w-0 w-[300px] md:w-full overflow-visible rounded-2xl border border-neutral-300 bg-foreground p-2 transition duration-300 hover:-translate-y-2 hover:border-neutral-500 hover:shadow-[0_20px_60px_rgba(0,0,0,0.25)]"
-      key={product._id}
-    >
+    <article data-product-card className={cn("group min-w-0", className)}>
       <Link
         href={`/products/${product.slug}`}
-        className="group block overflow-hidden rounded-xl"
+        className="press block rounded-xl transition-transform duration-150 ease-out focus-visible:outline-offset-4"
       >
-        <div className="relative  overflow-hidden rounded-xl bg-neutral-300 ">
-          <ViewTransition name={`product-image-${product.slug}`}>
+        <div className="relative aspect-square overflow-hidden rounded-xl bg-neutral-200">
+          <ViewTransition name={`product-image-${product._id}`}>
             <Image
-              className=" object-contain bg-white transition-transform duration-700 h-80 md:h-112 xl:h-104 group-hover:scale-105"
-              src={product.images[0]}
-              width={500}
-              height={500}
+              className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              src={product.images?.[0] || "/placeholder.svg"}
+              fill
+              sizes="(max-width: 640px) 70vw, (max-width: 1024px) 45vw, (max-width: 1536px) 25vw, 20vw"
               alt={`${product.name} de Aeryx`}
             />
           </ViewTransition>
-          <span
-            className={`${mono} absolute left-4 top-4 rounded-full bg-background px-3 py-2 text-[.58rem] text-foreground`}
-          >
-            {product.tag}
-          </span>
-        </div>
-        <div className="flex flex-col gap-4 p-4">
-          {product.isNew && (
-            <span
-              className={`${mono} w-fit  rounded-full text-red-400 font-bold text-[.58rem] `}
-            >
-              {product.isNew ? "NUEVO" : ""}
-            </span>
-          )}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <span className={`${mono} text-[.6rem] text-neutral-500`}>
-                {product.category}
-              </span>
-              <ViewTransition name={`product-name-${product.slug}`}>
-                <h3 className="mt-2 text-xl font-semibold">{product.name}</h3>
-              </ViewTransition>
+
+          <div className="absolute inset-x-3 top-3 flex items-start justify-between">
+            <div className="flex flex-wrap gap-1.5">
+              {product.isNew && (
+                <span className="rounded-full bg-[#070707] px-2.5 py-1 text-[11px] font-medium text-[#f4f4f2]">
+                  Nuevo
+                </span>
+              )}
+              {hasDiscount && (
+                <span className="rounded-full bg-accent px-2.5 py-1 text-[11px] font-medium text-[#070707]">
+                  −{Math.round((1 - price / original) * 100)}%
+                </span>
+              )}
+              {outOfStock && (
+                <span className="rounded-full bg-[#f4f4f2] px-2.5 py-1 text-[11px] font-medium text-[#070707]">
+                  Sin stock
+                </span>
+              )}
             </div>
-            <strong className="whitespace-nowrap text-base">
-              {currency.format(Number(product.price))}
-            </strong>
+            <span
+              aria-hidden="true"
+              className="grid size-9 translate-y-1 place-items-center rounded-full bg-[#f4f4f2] text-[#070707] opacity-0 transition-[opacity,transform] duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100"
+            >
+              <ArrowUpRight className="size-4" />
+            </span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            Ver detalle
-            <ArrowRight className="size-4" />
+
+          {!outOfStock && <PresaleCardBadge category={product.category} />}
+        </div>
+
+        <div className="flex items-start justify-between gap-3 px-0.5 pt-3">
+          <div className="min-w-0">
+            <ViewTransition name={`product-name-${product._id}`}>
+              <h3 className="truncate text-[15px] font-medium tracking-[-0.01em]">
+                {product.name}
+              </h3>
+            </ViewTransition>
+            {product.category && (
+              <p className="mt-0.5 truncate text-[13px] opacity-55">{product.category}</p>
+            )}
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[15px] font-medium tabular-nums">{currency.format(price)}</p>
+            {hasDiscount && (
+              <p className="mt-0.5 text-[13px] tabular-nums line-through opacity-45">
+                {currency.format(original)}
+              </p>
+            )}
           </div>
         </div>
       </Link>
-      <button
-        className={`${mono} flex w-full !text-xs md:text-sm items-center justify-center gap-3 rounded-lg border border-background bg-background p-4 text-foreground transition hover:-translate-y-0.5 hover:bg-foreground hover:text-background`}
-        aria-label={`Agregar ${product.name} al carrito`}
-      >
-        <ShoppingBag className="size-4" />
-        Agregar al carrito
-      </button>
     </article>
   );
 }

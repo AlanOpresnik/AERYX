@@ -30,10 +30,7 @@ export default function DividerProductBanner({ product }: Props) {
         </div>
       </div>
       <div className="flex flex-col justify-center px-6 py-20 md:px-10 lg:px-16">
-        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-          Aeryx standard / 04
-        </span>
-        <h2 className="mt-6 text-[clamp(2.75rem,5vw,4.75rem)] font-medium leading-[0.92] tracking-[-0.055em]">
+        <h2 className="text-[clamp(2.75rem,5vw,4.75rem)] font-medium leading-[0.95] tracking-[-0.045em]">
           Sin ruido.
           <br />
           <span className="text-muted-foreground">Solo juego.</span>
@@ -42,7 +39,7 @@ export default function DividerProductBanner({ product }: Props) {
           <ul className="mt-12 flex flex-col gap-2">
             {features.map((item) => (
               <li
-                className="flex items-center gap-4 rounded-xl border border-border px-4 py-4 text-sm transition-colors hover:border-foreground/30"
+                className="flex items-center gap-4 rounded-xl border border-border px-4 py-4 text-sm transition-colors duration-200 hover:border-foreground/30"
                 key={item}
               >
                 <span className="grid size-6 shrink-0 place-items-center rounded-full bg-foreground text-background">

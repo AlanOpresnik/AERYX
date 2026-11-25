@@ -18,4 +18,5 @@ export type CheckoutItem = {
   quantity: number;
   stock: number;
   variantName?: string;
+  category?: string;
 };

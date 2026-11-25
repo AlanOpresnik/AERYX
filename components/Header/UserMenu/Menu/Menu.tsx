@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { User, Package, Settings, LogOut } from "lucide-react";
+import { User, Package, Settings, LogOut, LayoutDashboard } from "lucide-react";
 
 import { mono } from "@/lib/products-mock-data";
 
 interface UserMenuProps {
   onClose: () => void;
   onSignOut: () => void;
+  isAdmin?: boolean;
 }
 
-export function UserMenu({ onClose, onSignOut }: UserMenuProps) {
+export function UserMenu({ onClose, onSignOut, isAdmin }: UserMenuProps) {
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/95 shadow-2xl shadow-black/50 backdrop-blur-xl">
       {/* ================================================= */}
@@ -18,6 +19,19 @@ export function UserMenu({ onClose, onSignOut }: UserMenuProps) {
       {/* ================================================= */}
 
       <div className="p-2">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            onClick={onClose}
+            className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-white/10"
+          >
+            <LayoutDashboard className="size-4 text-white/50 transition-colors group-hover:text-white" />
+            <span className={`${mono} text-sm text-white/70 transition-colors group-hover:text-white`}>
+              Panel admin
+            </span>
+          </Link>
+        )}
+
         {/* PERFIL */}
 
         <Link
@@ -37,7 +51,7 @@ export function UserMenu({ onClose, onSignOut }: UserMenuProps) {
         {/* PEDIDOS */}
 
         <Link
-          href="/profile"
+          href="/profile/pedidos"
           onClick={onClose}
           className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-white/10"
         >
@@ -53,7 +67,7 @@ export function UserMenu({ onClose, onSignOut }: UserMenuProps) {
         {/* CONFIGURACIÓN */}
 
         <Link
-          href="/profile/edit"
+          href="/profile/datos"
           onClick={onClose}
           className="group flex items-center gap-3 rounded-xl px-3 py-3 transition-colors duration-200 hover:bg-white/10"
         >
@@ -62,7 +76,7 @@ export function UserMenu({ onClose, onSignOut }: UserMenuProps) {
           <span
             className={`${mono} text-sm text-white/70 transition-colors group-hover:text-white`}
           >
-            Configuración
+            Mis datos
           </span>
         </Link>
       </div>

@@ -42,4 +42,6 @@ export interface Product {
   __v: number;
   /** Tiendanube variants — available when fetched from Tiendanube */
   variants?: ProductVariant[];
+  /** Slugs de productos que combinan con este (tags combina:<slug> en Tiendanube) */
+  pairsWith?: string[];
 }

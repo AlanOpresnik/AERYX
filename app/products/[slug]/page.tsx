@@ -1,4 +1,5 @@
-import { getProductByHandle } from "@/lib/api/server-api";
+import { getProductByHandle, getProductById } from "@/lib/api/server-api";
+import { PRESALE_GIFT } from "@/lib/presale";
 import ProductDetail from "@/components/ProductDetail";
 import { Footer } from "@/components/Footer/Footer";
 import { notFound } from "next/navigation";
@@ -35,9 +36,15 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
+  // Manga real que se regala en la preventa: su foto y precio se muestran en la ficha
+  const giftSource = await getProductById(PRESALE_GIFT.sourceProductId);
+  const giftPreview = giftSource
+    ? { name: PRESALE_GIFT.name, image: giftSource.images[0] ?? "", value: giftSource.originalPrice || giftSource.price }
+    : null;
+
   return (
     <>
-      <ProductDetail product={product} />
+      <ProductDetail product={product} giftPreview={giftPreview} />
       <Footer />
     </>
   );

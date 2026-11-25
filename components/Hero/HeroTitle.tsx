@@ -8,9 +8,14 @@ export default function HeroTitle({ words }: { words: string[] }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const currentWord = words[wordIndex];
+    // Con movimiento reducido, mostrar la primera palabra fija
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setText(words[0]);
+      return;
+    }
 
-    let timeout: NodeJS.Timeout;
+    const currentWord = words[wordIndex];
+    let timeout: ReturnType<typeof setTimeout>;
 
     if (!isDeleting) {
       if (text !== currentWord) {
@@ -18,28 +23,30 @@ export default function HeroTitle({ words }: { words: string[] }) {
           setText(currentWord.slice(0, text.length + 1));
         }, 90);
       } else {
-        timeout = setTimeout(() => {
-          setIsDeleting(true);
-        }, 1500);
+        timeout = setTimeout(() => setIsDeleting(true), 1600);
       }
+    } else if (text !== "") {
+      timeout = setTimeout(() => {
+        setText(currentWord.slice(0, text.length - 1));
+      }, 45);
     } else {
-      if (text !== "") {
-        timeout = setTimeout(() => {
-          setText(currentWord.slice(0, text.length - 1));
-        }, 50);
-      } else {
-        setIsDeleting(false);
-        setWordIndex((prev) => (prev + 1) % words.length);
-      }
+      setIsDeleting(false);
+      setWordIndex((prev) => (prev + 1) % words.length);
     }
 
     return () => clearTimeout(timeout);
   }, [text, isDeleting, wordIndex, words]);
 
   return (
-    <span className="inline-block min-w-[10ch] text-red-400">
-      {text}
-      <span className="animate-pulse">|</span>
+    <span className="inline-block min-w-[10ch] text-accent">
+      {/* El lector de pantalla lee todas las palabras una vez, no la animación */}
+      <span className="sr-only">{words.join(", ")}</span>
+      <span aria-hidden="true">
+        {text}
+        <span className="ml-[0.04em] inline-block w-[0.06em] animate-pulse bg-current align-[-0.08em] text-transparent">
+          |
+        </span>
+      </span>
     </span>
   );
 }

@@ -1,11 +1,6 @@
-import type { Metadata } from 'next'
-import ProductEditor from './components/ProductEditor/ProductEditor'
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: 'Nuevo producto — Aeryx',
-  description: 'Carga un nuevo producto al catálogo de Aeryx.',
-}
-
-export default function NewProductPage() {
-  return <ProductEditor />
+// Ruta vieja: el editor ahora vive en /admin/productos/nuevo
+export default function LegacyNewProduct() {
+  redirect("/admin/productos/nuevo");
 }

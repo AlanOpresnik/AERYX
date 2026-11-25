@@ -6,7 +6,7 @@ interface Props {
 }
 
 export default function SpecsDetails({ product }: Props) {
-  const specs = Object.entries(product.specs ?? {});
+  const specs = Object.entries(product.specs ?? {}).filter(([, v]) => v);
   if (specs.length === 0) return null;
 
   return (
@@ -14,27 +14,22 @@ export default function SpecsDetails({ product }: Props) {
       id="especificaciones"
       className="scroll-mt-20 px-6 py-20 md:px-[6vw] md:py-28"
     >
-      <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
-        <div className="lg:sticky lg:top-28 lg:self-start">
-          <p className="font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-            Ficha técnica / 03
-          </p>
-          <h2 className="mt-6 text-[clamp(2.75rem,5vw,4.75rem)] font-medium leading-[0.92] tracking-[-0.055em]">
-            Todo lo que <span className="text-muted-foreground">importa.</span>
-          </h2>
-        </div>
-        <dl className="overflow-hidden rounded-2xl border border-border">
-          {specs.map(([term, detail], i) => (
+      {/* Dos columnas iguales: título a la izquierda, ficha a la derecha (mismo estilo que "Sin ruido") */}
+      <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
+        <h2 className="text-[clamp(2.75rem,5vw,4.75rem)] font-medium leading-[0.95] tracking-[-0.045em]">
+          Todo lo que
+          <br />
+          <span className="text-muted-foreground">importa.</span>
+        </h2>
+
+        <dl className="flex flex-col gap-2">
+          {specs.map(([term, detail]) => (
             <div
               key={term}
-              className={`grid grid-cols-[.8fr_1.2fr] gap-6 px-5 py-5 transition-colors hover:bg-card md:px-7 ${
-                i > 0 ? "border-t border-border" : ""
-              }`}
+              className="grid grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] items-center gap-6 rounded-xl border border-border px-4 py-4 text-sm transition-colors duration-200 hover:border-foreground/30"
             >
-              <dt className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                {term}
-              </dt>
-              <dd className="text-sm font-medium">{detail}</dd>
+              <dt className="text-muted-foreground">{term}</dt>
+              <dd className="font-medium">{detail}</dd>
             </div>
           ))}
         </dl>

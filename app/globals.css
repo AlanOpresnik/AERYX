@@ -1,3 +1,6 @@
+/* Orden de capas: los estilos de Clerk quedan debajo de las utilidades de Tailwind */
+@layer theme, base, clerk, components, utilities;
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -5,6 +8,7 @@
 @theme inline {
   --font-sans: var(--font-geist), sans-serif;
   --font-mono: var(--font-geist-mono), monospace;
+  --font-display: var(--font-geist), sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,55 +38,269 @@
   --ring: #9c9c9c;
   --radius: 0.5rem;
 }
-* {
-  box-sizing: border-box;
-  border-color: var(--border);
+/* Reglas base dentro de @layer base para que las clases de Tailwind puedan pisarlas */
+@layer base {
+  * {
+    box-sizing: border-box;
+    border-color: var(--border);
+  }
+  html {
+    scroll-behavior: smooth;
+    background: var(--background);
+  }
+  body {
+    margin: 0;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist), sans-serif;
+  }
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button,
+  input {
+    font: inherit;
+  }
+  button {
+    cursor: pointer;
+  }
 }
-html {
-  scroll-behavior: smooth;
-  background: var(--background);
+:root {
+  /* Curvas de movimiento (Emil Kowalski): ease-out fuerte para UI */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --accent: #f87171; /* red-400, el acento de la marca */
 }
-body {
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist), sans-serif;
+
+@theme inline {
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+  --color-accent: var(--accent);
 }
-a {
-  color: inherit;
-  text-decoration: none;
-}
-button,
-input {
-  font: inherit;
-}
-button {
-  cursor: pointer;
-}
+
+/* ---------- Superficies del navegador ---------- */
 ::selection {
   background: var(--foreground);
   color: var(--background);
+}
+html {
+  -webkit-tap-highlight-color: transparent;
+  scrollbar-color: #3a3a3a var(--background);
+  scrollbar-width: thin;
+}
+input,
+textarea {
+  caret-color: var(--accent);
+}
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--foreground);
+    outline-offset: 3px;
+  }
+  .surface-light :focus-visible {
+    outline-color: var(--background);
+  }
+}
+
+/* ---------- Respuesta al presionar (todo lo clickeable) ---------- */
+@layer components {
+  .press:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+/* ---------- Marca: la "x" de Aeryx ---------- */
+@layer components {
+  .aeryx-mark {
+    position: relative;
+    display: inline-block;
+    aspect-ratio: 1;
+  }
+  .aeryx-mark i,
+  .aeryx-mark b {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 18%;
+    height: 100%;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .aeryx-mark i {
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  .aeryx-mark b {
+    transform: translate(-50%, -50%) rotate(-45deg);
+    opacity: 0.55;
+  }
+}
+
+/* ---------- Hero: fondo ---------- */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.06;
+  background-image:
+    linear-gradient(var(--foreground) 1px, transparent 1px),
+    linear-gradient(90deg, var(--foreground) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse at 30% 45%, black 10%, transparent 70%);
+}
+/* Halos del hero: degradados radiales estáticos (sin filter: blur ni animación, que son caros de pintar) */
+.smoke {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.smoke-one {
+  left: -15%;
+  top: 0;
+  width: 60rem;
+  height: 44rem;
+  background: radial-gradient(closest-side, rgb(248 113 113 / 0.13), transparent);
+}
+.smoke-two {
+  right: 0;
+  bottom: -10%;
+  width: 50rem;
+  height: 36rem;
+  background: radial-gradient(closest-side, rgb(244 244 242 / 0.06), transparent);
+}
+
+/* ---------- Única entrada animada: el hero ---------- */
+.hero-enter > * {
+  animation: hero-in 900ms var(--ease-out) both;
+}
+.hero-enter > *:nth-child(2) { animation-delay: 80ms; }
+.hero-enter > *:nth-child(3) { animation-delay: 160ms; }
+.hero-enter > *:nth-child(4) { animation-delay: 240ms; }
+@keyframes hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(6px);
+  }
+}
+
+/* ---------- Etiqueta chica (checkout) ---------- */
+.eyebrow {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* ---------- Wordmark ---------- */
+.wordmark {
+  font-weight: 600;
+  letter-spacing: -0.06em;
+}
+.wordmark-x {
+  color: var(--accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
   }
-  .smoke,
-  .reveal {
+  .hero-enter > * {
     animation: none;
   }
-  .reveal {
-    opacity: 1;
+  .press:active:not(:disabled) {
+    transform: none;
   }
-}
-.cursor {
-  display: inline-block;
-  animation: blink 0.8s infinite;
 }
 
-@keyframes blink {
-  50% {
-    opacity: 0;
-  }
+/* ===== Acceso (login / registro) =====
+   Un solo momento de entrada: la foto se descubre de abajo hacia arriba
+   y el formulario aparece apenas después. */
+@keyframes auth-reveal {
+  from { clip-path: inset(100% 0 0 0 round 1.75rem); }
+  to { clip-path: inset(0 0 0 0 round 1.75rem); }
+}
+@keyframes auth-settle {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+@keyframes auth-in {
+  from { opacity: 0; transform: translateY(12px); filter: blur(6px); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+.auth-visual { animation: auth-reveal 900ms var(--ease-in-out) both; }
+.auth-visual-image { animation: auth-settle 1400ms var(--ease-out) both; }
+.auth-form { animation: auth-in 600ms var(--ease-out) 260ms both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-visual, .auth-visual-image { animation: none; }
+  .auth-form { animation: auth-fade 300ms ease both; }
+}
+@keyframes auth-fade { from { opacity: 0; } }
+
+/* Sugerencias del carrito: aparecen suave cuando llegan, sin empujar de golpe */
+.cart-suggestions {
+  transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cart-suggestions { transition: opacity 200ms ease; @starting-style { transform: none; } }
+}
+
+/* Barra de anuncios: entra deslizando desde arriba, una sola vez */
+.announcement-enter {
+  overflow: hidden;
+  animation: announcement-in 450ms var(--ease-out) both;
+}
+@keyframes announcement-in {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .announcement-enter { animation: auth-fade 200ms ease both; }
+}
+
+.cart-promo {
+  transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(-4px); }
+}
+
+/* La barra de navegación queda fija durante el cambio de página.
+   Tiene su propia capa en la transición: no se anima ni desaparece. */
+.site-header { view-transition-name: site-header; }
+::view-transition-group(site-header) { z-index: 50; animation: none; }
+::view-transition-old(site-header) { display: none; }
+::view-transition-new(site-header) { animation: none; }
+
+/* Línea de regalo: aparece con un pequeño asentamiento cuando el pedido califica */
+.gift-line {
+  transition: opacity 350ms var(--ease-out), transform 350ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gift-line { transition: opacity 200ms ease; @starting-style { transform: none; } }
+}
+
+/* Sellos y avisos de preventa: aparecen suave al confirmarse en el navegador */
+.presale-badge, .presale-note {
+  transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(4px); }
+}
+
+/* Compra exitosa: el tilde se dibuja una sola vez, después el contenido se asienta */
+.thanks-check circle { stroke-dasharray: 151; stroke-dashoffset: 151; animation: thanks-draw 700ms var(--ease-out) 100ms forwards; }
+.thanks-check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: thanks-draw 450ms var(--ease-out) 600ms forwards; }
+@keyframes thanks-draw { to { stroke-dashoffset: 0; } }
+.thanks-enter > :not(svg) { animation: auth-in 600ms var(--ease-out) 200ms both; }
+.thanks-gift { animation: auth-in 600ms var(--ease-out) 900ms both; }
+.pending-toast {
+  transition: opacity 300ms var(--ease-out), transform 300ms var(--ease-out);
+  @starting-style { opacity: 0; transform: translateY(12px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .thanks-check circle, .thanks-check path { animation: none; stroke-dashoffset: 0; }
+  .thanks-enter > :not(svg), .thanks-gift { animation: auth-fade 300ms ease both; }
 }

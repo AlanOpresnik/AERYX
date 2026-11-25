@@ -6,6 +6,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/app/context/cartContext";
 import { CheckoutItem } from "@/lib/interface/cart";
+import { currency } from "@/lib/utils";
+import { CartSuggestions } from "./CartSuggestions";
+import { CartPromo } from "./CartPromo";
+import { GiftLine, GiftSavings, useCartGift } from "@/components/Presale/GiftLine";
+import { PRESALE_GIFT } from "@/lib/presale";
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -62,6 +67,9 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     };
   }, [isOpen, cart, validateCart]);
 
+  // Regalo de preventa: lo calcula el servidor según lo que hay en el carrito
+  const gift = useCartGift(items);
+
   const cartTotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -116,6 +124,7 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto px-6 py-4">
+            {!gift && <CartPromo items={items} />}
             <ul className="flex flex-col gap-6">
               {items.map((item) => (
                 <li key={item.variantId} className="flex gap-4">
@@ -183,23 +192,38 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                       </div>
 
                       <span className={`${mono} text-sm`}>
-                        ${(item.price * item.quantity).toFixed(2)}
+                        {currency.format(item.price * item.quantity)}
                       </span>
                     </div>
                   </div>
                 </li>
               ))}
             </ul>
+
+            {gift && (
+              <div className="mt-6">
+                <GiftLine gift={gift} />
+              </div>
+            )}
+
+            <CartSuggestions
+              items={items}
+              onNavigate={onClose}
+              hide={gift && gift.quantity > 0 ? [PRESALE_GIFT.sourceProductId] : []}
+            />
           </div>
         )}
 
         {/* Footer con total y checkout */}
         {cart.length > 0 && !error && (
           <div className="border-t border-border px-6 py-5">
+            <div className="mb-3">
+              <GiftSavings gift={gift} />
+            </div>
             <div className="mb-4 flex items-center justify-between">
               <span className={`${mono} text-muted-foreground`}>Subtotal</span>
               <span className={`${mono} text-lg font-semibold`}>
-                ${cartTotal.toFixed(2)}
+                {currency.format(cartTotal)}
               </span>
             </div>
             <Link

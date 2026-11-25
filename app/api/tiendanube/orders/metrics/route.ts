@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { tiendanube } from "@/lib/tiendanube/client";
+import { checkSuperadmin } from "@/lib/auth/superadmin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const access = await checkSuperadmin();
+  if (!access.ok) {
+    return NextResponse.json({ success: false, message: access.error }, { status: access.status });
+  }
+
   try {
     // Fetch recent orders (last 200)
     const orders = await tiendanube.getOrders({ per_page: 200 });

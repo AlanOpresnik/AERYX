@@ -112,7 +112,7 @@ function ProductCardSkeleton() {
   return (
     <div className="animate-pulse">
       {/* Imagen */}
-      <div className="relative aspect-square w-full overflow-hidden bg-black/[0.08]">
+      <div className="relative aspect-square w-full overflow-hidden rounded-xl bg-black/[0.08]">
         {/* Badge */}
         <SkeletonBlock className="absolute left-3 top-3 h-6 w-20 rounded-full" />
 
@@ -143,7 +143,7 @@ function ProductCardSkeleton() {
 
 function ProductsGridSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-9 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-4 2xl:grid-cols-4">
       {Array.from({ length: 6 }).map((_, index) => (
         <ProductCardSkeleton key={index} />
       ))}
@@ -157,8 +157,8 @@ function ProductsGridSkeleton() {
 
 export default function CatalogSkeletonGrid() {
   return (
-    <main className="min-h-screen bg-[#f4f4f1] text-[#101010] pt-32">
-      <section className="border-t border-black/15 px-5 py-8 sm:px-8 lg:px-12 lg:py-10">
+    <main className="min-h-screen bg-foreground text-background pt-20">
+      <section className="px-6 pt-14 pb-24 md:px-[6vw] md:pt-20">
         <div className="mx-auto max-w-[1440px]">
 
           {/* =================================================

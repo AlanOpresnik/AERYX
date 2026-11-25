@@ -62,7 +62,8 @@ export async function POST(request: NextRequest) {
           quantity: item.quantity,
           stock: stock,
           variantId: variantId ?? 0,
-          variantName: variantName
+          variantName: variantName,
+          category: product.category,
         });
 
       } catch (err) {

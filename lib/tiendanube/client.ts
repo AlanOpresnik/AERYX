@@ -5,6 +5,12 @@ import {
   TiendanubeDraftOrder,
   TiendanubeDraftOrderProduct,
   TiendanubeOrder,
+  TiendanubeImage,
+  TiendanubeProductCreate,
+  TiendanubeStore,
+  TiendanubeCustomerFull,
+  TiendanubeOrderFull,
+  TiendanubeVariant,
 } from "./types";
 
 const STORE_ID = process.env.TIENDANUBE_STORE_ID;
@@ -15,10 +21,7 @@ class TiendanubeClient {
     return `https://api.tiendanube.com/v1/${STORE_ID}`;
   }
 
-  private async request<T>(
-    endpoint: string,
-    options?: RequestInit,
-  ): Promise<T> {
+  private async send(endpoint: string, options?: RequestInit): Promise<Response> {
     if (!STORE_ID || !ACCESS_TOKEN) {
       throw new Error(
         "Tiendanube environment variables are not configured properly.",
@@ -46,6 +49,7 @@ class TiendanubeClient {
         const retryAfter = response.headers.get("retry-after");
         const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay;
         await new Promise((resolve) => setTimeout(resolve, waitTime));
+        delay *= 2;
         retries--;
         continue;
       }
@@ -57,10 +61,80 @@ class TiendanubeClient {
         );
       }
 
-      return response.json();
+      return response;
     }
 
     throw new Error("Tiendanube API Rate limit exceeded after retries.");
+  }
+
+  private async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    return (await this.send(endpoint, options)).json();
+  }
+
+  /** Igual que request, pero también devuelve el total de resultados (para paginar). */
+  private async requestPage<T>(
+    endpoint: string,
+    options?: RequestInit,
+  ): Promise<{ items: T[]; total: number }> {
+    try {
+      const response = await this.send(endpoint, options);
+      const items = (await response.json()) as T[];
+      const total = Number(response.headers.get("x-total-count"));
+      return { items, total: Number.isFinite(total) ? total : items.length };
+    } catch (error) {
+      // Tiendanube responde 404 cuando una página filtrada no tiene resultados
+      if (error instanceof Error && /Error 404/.test(error.message)) {
+        return { items: [], total: 0 };
+      }
+      throw error;
+    }
+  }
+
+  private query(params?: Record<string, unknown>): string {
+    const clean = Object.fromEntries(
+      Object.entries(params || {})
+        .filter(([, v]) => v !== undefined && v !== "")
+        .map(([k, v]) => [k, String(v)]),
+    );
+    return Object.keys(clean).length ? "?" + new URLSearchParams(clean) : "";
+  }
+
+  // ---- Lectura para el panel de administración (sin caché) ----
+
+  public async getStore(): Promise<TiendanubeStore> {
+    return this.request<TiendanubeStore>(
+      "/store?fields=id,name,original_domain,url_with_protocol,main_currency",
+      { next: { revalidate: 3600 } },
+    );
+  }
+
+  public async getOrdersPage(params: {
+    page?: number;
+    per_page?: number;
+    q?: string;
+    status?: string;
+    payment_status?: string;
+    shipping_status?: string;
+    created_at_min?: string;
+    customer_ids?: number;
+  }) {
+    return this.requestPage<TiendanubeOrderFull>(`/orders${this.query(params)}`, {
+      cache: "no-store",
+    });
+  }
+
+  public async getCustomersPage(params: { page?: number; per_page?: number; q?: string }) {
+    return this.requestPage<TiendanubeCustomerFull>(
+      `/customers${this.query(params)}`,
+      { cache: "no-store" },
+    );
+  }
+
+  public async getAllProductsForAdmin(): Promise<TiendanubeProduct[]> {
+    // Incluye los productos sin publicar
+    return this.request<TiendanubeProduct[]>("/products?per_page=200", {
+      cache: "no-store",
+    });
   }
 
   public async getProducts(params?: {
@@ -135,6 +209,55 @@ class TiendanubeClient {
     });
   }
 
+  // ---- Escritura de productos (requiere el permiso write_products) ----
+
+  public async createProduct(data: TiendanubeProductCreate): Promise<TiendanubeProduct> {
+    return this.request<TiendanubeProduct>("/products", {
+      method: "POST",
+      body: JSON.stringify(data),
+      cache: "no-store",
+    });
+  }
+
+  public async updateProduct(
+    id: number,
+    data: Partial<Pick<TiendanubeProductCreate, "published" | "name" | "description" | "tags">>,
+  ): Promise<TiendanubeProduct> {
+    return this.request<TiendanubeProduct>(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+      cache: "no-store",
+    });
+  }
+
+  public async addProductImage(
+    productId: number,
+    image: { attachment: string; filename: string; position: number },
+  ): Promise<TiendanubeImage> {
+    return this.request<TiendanubeImage>(`/products/${productId}/images`, {
+      method: "POST",
+      body: JSON.stringify(image),
+      cache: "no-store",
+    });
+  }
+
+  /** Stock de una variante. null = sin control de stock (ilimitado). */
+  public async updateVariantStock(productId: number, variantId: number, stock: number | null) {
+    return this.request<TiendanubeVariant>(`/products/${productId}/variants/${variantId}`, {
+      method: "PUT",
+      body: JSON.stringify({ stock }),
+      cache: "no-store",
+    });
+  }
+
+  public async createCategory(name: string): Promise<TiendanubeCategory> {
+    return this.request<TiendanubeCategory>("/categories", {
+      method: "POST",
+      body: JSON.stringify({ name: { es: name } }),
+      cache: "no-store",
+    });
+  }
+
   public async getOrders(params?: {
     page?: number;
     per_page?: number;
@@ -153,6 +276,11 @@ class TiendanubeClient {
     return this.request<TiendanubeOrder[]>(`/orders${query}`, {
       next: { revalidate: 0 },
     });
+  }
+
+  /** Pedido sin pagar: trae el link para retomar el pago. */
+  public async getDraftOrder(id: number): Promise<TiendanubeDraftOrder & { abandoned_checkout_url?: string }> {
+    return this.request(`/draft_orders/${id}`, { cache: "no-store" });
   }
 
   public async getOrderById(id: number): Promise<TiendanubeOrder> {

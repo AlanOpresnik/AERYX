@@ -1,14 +1,30 @@
+import type { Metadata } from "next";
 import { SignIn } from "@clerk/nextjs";
+import { AuthShell } from "@/components/Auth/AuthShell";
+
+export const metadata: Metadata = { title: "Iniciar sesión — Aeryx" };
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <AuthShell
+      image="/banner/Banner2.jpeg"
+      focus="50% 18%"
+      statement={
+        <>
+          Born to
+          <br />
+          compete.
+        </>
+      }
+      caption="Equipamiento diseñado para transformar cada movimiento en una ventaja competitiva."
+    >
       <SignIn
         path="/login"
         routing="path"
         signUpUrl="/registro"
-        forceRedirectUrl="/cuenta"
+        // Vuelve a la página que pidió el login (redirect_url); si no hay, al inicio
+        fallbackRedirectUrl="/"
       />
-    </main>
+    </AuthShell>
   );
 }

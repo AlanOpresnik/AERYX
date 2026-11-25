@@ -1,4 +1,4 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { NextResponse, type NextRequest } from 'next/server';
 import { isLaunched, PREVIEW_COOKIE } from '@/lib/launch';
 
@@ -17,6 +17,12 @@ const ALLOWED_PREFIXES = [
 
 function comingSoonGate(req: NextRequest): NextResponse | undefined {
   const { pathname, searchParams } = req.nextUrl;
+
+  // En local (npm run dev) se navega libre. Para probar la redirección en local,
+  // poné FORCE_COMING_SOON=1 en .env.local.
+  if (process.env.NODE_ENV === 'development' && process.env.FORCE_COMING_SOON !== '1') {
+    return;
+  }
 
   if (isLaunched()) {
     // Después de la apertura, la página de "próximamente" ya no tiene sentido
@@ -55,7 +61,18 @@ function comingSoonGate(req: NextRequest): NextResponse | undefined {
   return NextResponse.redirect(new URL(COMING_SOON, req.url), 307);
 }
 
-export default clerkMiddleware((_auth, req) => comingSoonGate(req));
+// Rutas que exigen sesión. El permiso de superadmin se valida además en el
+// servidor (layout del admin, server actions y APIs), porque el mail no viaja en el token.
+const requiresSession = createRouteMatcher(['/admin(.*)', '/profile(.*)']);
+
+export default clerkMiddleware(
+  async (auth, req) => {
+    const gate = comingSoonGate(req);
+    if (gate) return gate;
+    if (requiresSession(req)) await auth.protect();
+  },
+  { signInUrl: '/login', signUpUrl: '/registro' },
+);
 
 export const config = {
   matcher: [

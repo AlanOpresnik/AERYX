@@ -4,9 +4,16 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Footer } from "@/components/Footer/Footer";
 import { ViewTransition } from "react";
-import { Header } from "@/components/Header/Header";
+import { SiteHeader } from "@/components/Header/SiteHeader";
+import { AnnouncementBar } from "@/components/Announcement/AnnouncementBar";
+import { AnnouncementsProvider } from "@/components/Announcement/AnnouncementsContext";
+import { getPublicAnnouncements } from "@/lib/announcements";
+import { getPresaleConfig } from "@/lib/presale-config";
+import { PresaleProvider } from "@/components/Presale/PresaleContext";
+import { PendingOrderToast } from "@/components/Presale/PendingOrderToast";
 import { CartProvider } from "./context/cartContext";
 import { ClerkProvider } from "@clerk/nextjs";
+import { clerkAppearance, clerkLocalization } from "@/lib/clerk-appearance";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 const geistMono = Geist_Mono({
@@ -28,9 +35,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const [announcements, presale] = await Promise.all([getPublicAnnouncements(), getPresaleConfig()]);
+
   return (
     <html lang="es" className="bg-background">
       <body
@@ -38,9 +47,24 @@ export default function RootLayout({
       >
         <ViewTransition>
           <CartProvider>
-            <ClerkProvider>
-              <Header />
+            <ClerkProvider
+              signInUrl="/login"
+              signUpUrl="/registro"
+              afterSignOutUrl="/"
+              appearance={clerkAppearance}
+              localization={clerkLocalization}
+            >
+              <AnnouncementsProvider value={announcements}>
+              <PresaleProvider value={presale}>
+              <AnnouncementBar announcements={announcements} />
+              {/* El header es absoluto: este contenedor lo ubica debajo de la barra de anuncios */}
+              <div className="relative">
+                <SiteHeader />
+              </div>
               {children}
+              <PendingOrderToast />
+              </PresaleProvider>
+              </AnnouncementsProvider>
             </ClerkProvider>
           </CartProvider>
         </ViewTransition>

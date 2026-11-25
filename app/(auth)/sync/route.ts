@@ -5,12 +5,18 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export async function GET(request: Request) {
   try {
-      console.log("🔥 AUTH SYNC EJECUTADO");
+      // Si el backend de usuarios falla, la cuenta de Clerk ya existe: se sigue al inicio
+    // en vez de mandar a un usuario logueado de vuelta al registro.
     // ============================================
     // OBTENER SESIÓN DE CLERK
     // ============================================
 
     const { userId, getToken } = await auth();
+
+    // Sin backend de usuarios configurado (producción actual), no hay nada que sincronizar
+    if (!API_URL) {
+      return NextResponse.redirect(new URL(userId ? "/" : "/login", request.url));
+    }
 
     if (!userId) {
       return NextResponse.redirect(
@@ -103,10 +109,7 @@ export async function GET(request: Request) {
       );
 
       return NextResponse.redirect(
-        new URL(
-          "/registro?error=sync",
-          request.url,
-        ),
+        new URL("/", request.url),
       );
     }
 
@@ -129,10 +132,7 @@ export async function GET(request: Request) {
     );
 
     return NextResponse.redirect(
-      new URL(
-        "/registro?error=sync",
-        request.url,
-      ),
+      new URL("/", request.url),
     );
   }
 }

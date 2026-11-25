@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     const signature = request.headers.get("x-linkedstore-hmac-sha256");
 
     // Verify webhook signature
-    if (signature && !verifySignature(rawBody, signature)) {
+    // Sin firma válida no se procesa (antes, sin el header se salteaba la verificación)
+    if (!signature || !verifySignature(rawBody, signature)) {
       console.error("[Webhook] Invalid signature");
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }

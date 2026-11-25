@@ -12,6 +12,7 @@ import { CartSidebar } from "./CartSidebar";
 import { useClerk, useUser } from "@clerk/nextjs";
 import Avatar from "./UserMenu/Avatar";
 import { UserMenu } from "./UserMenu/Menu/Menu";
+import { SUPERADMIN_EMAIL } from "@/lib/auth/constants";
 
 export function Header() {
   const { cartCount } = useCart();
@@ -92,7 +93,7 @@ export function Header() {
   return (
     <>
       <header
-        className={`absolute inset-x-0 top-0 !z-50 flex h-20 items-center justify-between border-b border-border !bg-black ${pagePad}`}
+        className={`site-header absolute inset-x-0 top-0 !z-50 flex h-20 items-center justify-between border-b border-border !bg-black ${pagePad}`}
       >
         {/* ================================================= */}
         {/* LOGO */}
@@ -103,9 +104,7 @@ export function Header() {
           className={`${mono} flex items-center gap-3 text-foreground text-2xl font-semibold tracking-[-.02em]`}
           aria-label="Inicio de Aeryx"
         >
-          <h1 className="text-2xl font-semibold">
-            AERYX
-          </h1>
+          <span className="text-2xl font-semibold">AERYX</span>
         </Link>
 
         {/* ================================================= */}
@@ -125,14 +124,14 @@ export function Header() {
 
           <Link
             className="transition-colors hover:text-foreground"
-            href="/categories"
+            href="/#categorias"
           >
             Categorías
           </Link>
 
           <Link
             className="transition-colors hover:text-foreground"
-            href="/about"
+            href="/#marca"
           >
             Nosotros
           </Link>
@@ -141,8 +140,8 @@ export function Header() {
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className={`${mono} flex items-center gap-2`}
-            aria-label="Abrir carrito"
+            className={`${mono} press flex items-center gap-2 transition-colors duration-200 hover:text-foreground/80`}
+            aria-label={`Abrir carrito (${cartCount} productos)`}
           >
             <ShoppingBag className="size-4" />
 
@@ -150,7 +149,7 @@ export function Header() {
               Tienda
             </span>
 
-            <span className="grid size-6 place-items-center rounded-full bg-foreground text-background">
+            <span className="grid size-6 place-items-center rounded-full bg-foreground text-background tabular-nums">
               {cartCount}
             </span>
           </button>
@@ -175,7 +174,7 @@ export function Header() {
               <Avatar user={user} />
 
               <ChevronDown
-                className={`hidden size-4 text-white/50 transition-transform duration-300 sm:block ${
+                className={`hidden size-4 text-white/50 transition-transform duration-200 ease-out sm:block ${
                   isUserMenuOpen
                     ? "rotate-180"
                     : ""
@@ -186,10 +185,10 @@ export function Header() {
 
 
             <div
-              className={`absolute right-0 top-[calc(100%+12px)] z-[100] w-64 origin-top-right transition-all duration-200 ${
+              className={`absolute right-0 top-[calc(100%+12px)] z-[100] w-64 origin-top-right transition-[opacity,transform] duration-200 ease-out ${
                 isUserMenuOpen
                   ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-                  : "pointer-events-none -translate-y-2 scale-95 opacity-0"
+                  : "pointer-events-none -translate-y-1 scale-[0.97] opacity-0"
               }`}
             >
               {/* USER INFO */}
@@ -222,6 +221,14 @@ export function Header() {
                     setIsUserMenuOpen(false)
                   }
                   onSignOut={handleSignOut}
+                  // Solo muestra el acceso; el permiso real se valida en el servidor
+                  isAdmin={Boolean(
+                    user?.emailAddresses.some(
+                      (e) =>
+                        e.emailAddress.toLowerCase() === SUPERADMIN_EMAIL &&
+                        e.verification?.status === "verified",
+                    ),
+                  )}
                 />
               </div>
             </div>

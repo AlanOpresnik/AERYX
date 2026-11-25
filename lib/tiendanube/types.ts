@@ -54,6 +54,22 @@ export interface TiendanubeProduct {
   brand: string;
 }
 
+export interface TiendanubeProductCreate {
+  name: { es: string };
+  description: { es: string };
+  handle: { es: string };
+  tags: string;
+  published: boolean;
+  categories?: number[];
+  attributes?: { es: string }[];
+  variants: {
+    price: string;
+    promotional_price: string | null;
+    stock: number | null;
+    values?: { es: string }[];
+  }[];
+}
+
 export interface TiendanubeDraftOrderProduct {
   variant_id: number;
   quantity: number;
@@ -114,6 +130,7 @@ export interface TiendanubeOrder {
   total: string;
   subtotal: string;
   shipping_cost_customer: string;
+  shipping_cost_owner: string;
   currency: string;
   created_at: string;
   updated_at: string;
@@ -129,4 +146,46 @@ export interface TiendanubeApiError {
   code: number;
   message: string;
   description: string;
+}
+
+export interface TiendanubeStore {
+  id: number;
+  name: TiendanubeI18nField;
+  original_domain: string;
+  url_with_protocol: string;
+  main_currency: string;
+}
+
+export interface TiendanubeCustomerFull {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  total_spent: string | null;
+  total_spent_currency: string | null;
+  last_order_id: number | null;
+  active: boolean;
+  accepts_marketing: boolean;
+  created_at: string;
+  default_address?: { city?: string; province?: string } | null;
+}
+
+/** Campos extra de una orden que usa el panel (la API devuelve muchos más). */
+export interface TiendanubeOrderFull extends TiendanubeOrder {
+  contact_email: string | null;
+  contact_name: string | null;
+  contact_phone: string | null;
+  gateway_name: string | null;
+  shipping_option: string | null;
+  shipping_tracking_number: string | null;
+  shipping_tracking_url: string | null;
+  discount: string | null;
+  note: string | null;
+  owner_note: string | null;
+  paid_at: string | null;
+  cancelled_at: string | null;
+  closed_at: string | null;
+  shipping_status: string;
+  products: (TiendanubeOrderProduct & { variant_values?: string[] })[];
+  shipping_address: TiendanubeShippingAddress & { name?: string; province?: string; floor?: string };
 }

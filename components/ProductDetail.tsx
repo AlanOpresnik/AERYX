@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowDown, PackageCheck, ShieldCheck, Truck } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
 import { Newsletter } from "./NewsLetter/NewsLetter";
 import ImagesProductDetails from "@/app/products/components/ImagesProductDetails/ImagesProductDetails";
@@ -14,18 +14,16 @@ import { Benefits } from "./Benefits/Benefits";
 import AddToCart from "@/app/products/components/AddToCart/AddToCart";
 import { Product } from "@/lib/interface/ProductInterface";
 import { useCart } from "@/app/context/cartContext";
+import { PresaleProductNote, type GiftPreview } from "./Presale/PresaleBadges";
 
 type ProductDetailProps = {
   product: Product;
+  /** Datos del regalo de preventa, para mostrarlo en la ficha */
+  giftPreview?: GiftPreview | null;
 };
 
-const perks = [
-  { icon: Truck, title: "Envío a todo el país", text: "Despacho en 24–48 h" },
-  { icon: ShieldCheck, title: "Compra protegida", text: "Pago seguro" },
-  { icon: PackageCheck, title: "Cambios simples", text: "Hasta 30 días" },
-];
 
-export default function ProductDetail({ product }: ProductDetailProps) {
+export default function ProductDetail({ product, giftPreview = null }: ProductDetailProps) {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -126,7 +124,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             compareAtPrice={compareAt}
           />
 
-          <div className="mt-10 flex flex-col gap-6 rounded-2xl border border-border bg-card/60 p-5 md:p-6">
+          <div className="mt-8 flex flex-col gap-6 border-t border-border pt-8">
+            <PresaleProductNote category={product.category} productId={product._id} gift={giftPreview} />
             {sizes.length > 1 || sizes[0].name !== "Único" ? (
               <SizeSelection
                 sizes={sizes}
@@ -141,63 +140,34 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               quantity={quantity}
               setQuantity={setQuantity}
               added={added}
+              unitPrice={price}
               disabled={outOfStock}
               loading={loading}
               maxQuantity={maxQuantity}
-            />
-
-            <p
-              className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground"
-              aria-live="polite"
-            >
-              <span
-                className={`relative inline-flex size-2 rounded-full ${
-                  outOfStock ? "bg-red-400" : lowStock ? "bg-amber-400" : "bg-emerald-400"
-                }`}
-              >
-                {!outOfStock && (
+              status={
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <span
-                    className={`absolute inset-0 animate-ping rounded-full opacity-60 ${
-                      lowStock ? "bg-amber-400" : "bg-emerald-400"
+                    aria-hidden="true"
+                    className={`size-1.5 rounded-full ${
+                      outOfStock ? "bg-red-400" : lowStock ? "bg-amber-400" : "bg-emerald-400"
                     }`}
                   />
-                )}
-              </span>
-              {added
-                ? `${quantity} unidad${quantity > 1 ? "es" : ""} agregada${
-                    quantity > 1 ? "s" : ""
-                  } al carrito`
-                : outOfStock
-                  ? "Sin stock en esta variante"
-                  : lowStock
-                    ? `Últimas ${stock} unidades`
-                    : "En stock · Listo para despachar"}
-            </p>
+                  {outOfStock
+                    ? "Sin stock"
+                    : lowStock
+                      ? `Quedan ${stock}`
+                      : "En stock"}
+                </p>
+              }
+            />
           </div>
-
-          <ul className="mt-6 grid grid-cols-3 gap-2">
-            {perks.map(({ icon: Icon, title, text }) => (
-              <li
-                key={title}
-                className="flex flex-col gap-2 rounded-xl border border-border/70 p-3"
-              >
-                <Icon className="size-4 text-muted-foreground" />
-                <div className="flex flex-col gap-0.5">
-                  <strong className="text-xs font-medium leading-tight">{title}</strong>
-                  <span className="text-[11px] leading-tight text-muted-foreground">
-                    {text}
-                  </span>
-                </div>
-              </li>
-            ))}
-          </ul>
 
           <a
             href="#tecnologia"
-            className="group mt-8 flex items-center justify-between border-t border-border pt-5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground"
+            className="group mt-10 flex items-center gap-2 self-start text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline"
           >
             Explorar tecnología
-            <ArrowDown className="size-4 transition-transform group-hover:translate-y-0.5" />
+            <ArrowDown className="size-3.5 transition-transform group-hover:translate-y-0.5" />
           </a>
         </div>
       </section>

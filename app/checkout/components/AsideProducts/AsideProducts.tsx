@@ -1,6 +1,7 @@
 import { CheckoutItem } from "@/lib/interface/cart";
 import { Product } from "@/lib/interface/ProductInterface";
 import { Minus, Plus } from "lucide-react";
+import { currency } from "@/lib/utils";
 import React from "react";
 
 interface Props {
@@ -65,7 +66,7 @@ export default function AsideProducts({
               </div>
 
               <p className="text-sm font-semibold">
-                €{(item.price * item.quantity).toFixed(2)}
+                {currency.format(item.price * item.quantity)}
               </p>
             </div>
           </div>
