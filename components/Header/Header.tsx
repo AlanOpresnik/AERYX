@@ -15,9 +15,8 @@ import { UserMenu } from "./UserMenu/Menu/Menu";
 import { SUPERADMIN_EMAIL } from "@/lib/auth/constants";
 
 export function Header() {
-  const { cartCount } = useCart();
+  const { cartCount, isCartOpen, openCart, closeCart } = useCart();
 
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -139,7 +138,7 @@ export function Header() {
         <div className="flex items-center gap-6">
           <button
             type="button"
-            onClick={() => setIsCartOpen(true)}
+            onClick={openCart}
             className={`${mono} press flex items-center gap-2 transition-colors duration-200 hover:text-foreground/80`}
             aria-label={`Abrir carrito (${cartCount} productos)`}
           >
@@ -242,9 +241,7 @@ export function Header() {
 
       <CartSidebar
         isOpen={isCartOpen}
-        onClose={() =>
-          setIsCartOpen(false)
-        }
+        onClose={closeCart}
       />
     </>
   );

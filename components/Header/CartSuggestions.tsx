@@ -35,12 +35,12 @@ function readDismissed(): string[] {
 export function CartSuggestions({
   items,
   onNavigate,
-  hide = [],
+  reasons = {},
 }: {
   items: CheckoutItem[];
   onNavigate: () => void;
-  /** Productos que no tiene sentido ofrecer (ej. el que ya va de regalo) */
-  hide?: string[];
+  /** Motivo propio para algunos productos (ej. el que ya va de regalo: "sumá la del otro brazo") */
+  reasons?: Record<string, string>;
 }) {
   const { addToCart, loading } = useCart();
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -79,7 +79,9 @@ export function CartSuggestions({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  const visible = suggestions.filter((s) => !dismissed.includes(s.productId) && !hide.includes(s.productId));
+  const visible = suggestions
+    .filter((s) => !dismissed.includes(s.productId))
+    .map((s) => (reasons[s.productId] ? { ...s, reason: reasons[s.productId] } : s));
   if (visible.length === 0) return null;
 
   const dismiss = (id: string) => {
@@ -135,7 +137,7 @@ export function CartSuggestions({
             </Link>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs text-muted-foreground">{s.reason}</p>
+              <p className="line-clamp-2 text-xs leading-snug text-muted-foreground">{s.reason}</p>
               <Link
                 href={`/products/${s.slug}`}
                 onClick={onNavigate}

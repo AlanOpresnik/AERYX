@@ -20,6 +20,10 @@ type CartContextType = {
   removeFromCart: (variantId: number) => Promise<void>;
   clearCart: () => void;
   validateCart: (cart: CartStorageItem[]) => Promise<CheckoutItem[]>;
+  /** El drawer del carrito (se abre solo al agregar un producto) */
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,6 +33,9 @@ const CART_KEY = "cart";
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartStorageItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const openCart = useCallback(() => setIsCartOpen(true), []);
+  const closeCart = useCallback(() => setIsCartOpen(false), []);
 
   // Load cart from localStorage
   useEffect(() => {
@@ -97,6 +104,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // Validate before saving
         await validateCart(newCart);
         setCart(newCart);
+        // Mostrar el carrito con lo recién agregado
+        setIsCartOpen(true);
       } finally {
         setLoading(false);
       }
@@ -161,6 +170,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         removeFromCart,
         clearCart,
         validateCart,
+        isCartOpen,
+        openCart,
+        closeCart,
       }}
     >
       {children}

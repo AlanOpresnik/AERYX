@@ -209,7 +209,11 @@ export function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
             <CartSuggestions
               items={items}
               onNavigate={onClose}
-              hide={gift && gift.quantity > 0 ? [PRESALE_GIFT.sourceProductId] : []}
+              reasons={
+                gift && gift.quantity > 0
+                  ? { [PRESALE_GIFT.sourceProductId]: "Ya llevás una de regalo · sumá la del otro brazo" }
+                  : {}
+              }
             />
           </div>
         )}

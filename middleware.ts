@@ -15,6 +15,21 @@ const ALLOWED_PREFIXES = [
   '/__clerk',
 ];
 
+// Dirección principal de la tienda. Cualquier visita de producción a *.vercel.app
+// (por ejemplo, la vuelta desde el pago de Tiendanube) se manda acá, con la misma ruta.
+const CANONICAL_HOST = 'www.aeryx.com.ar';
+
+function canonicalHost(req: NextRequest): NextResponse | undefined {
+  if (process.env.VERCEL_ENV !== 'production') return;
+  const host = req.headers.get('host') ?? '';
+  if (!host.endsWith('.vercel.app')) return;
+  const url = req.nextUrl.clone();
+  url.protocol = 'https:';
+  url.host = CANONICAL_HOST;
+  url.port = '';
+  return NextResponse.redirect(url, 308);
+}
+
 function comingSoonGate(req: NextRequest): NextResponse | undefined {
   const { pathname, searchParams } = req.nextUrl;
 
@@ -67,6 +82,9 @@ const requiresSession = createRouteMatcher(['/admin(.*)', '/profile(.*)']);
 
 export default clerkMiddleware(
   async (auth, req) => {
+    const canonical = canonicalHost(req);
+    if (canonical) return canonical;
+
     const gate = comingSoonGate(req);
     if (gate) return gate;
     if (requiresSession(req)) await auth.protect();
